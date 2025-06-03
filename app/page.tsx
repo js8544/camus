@@ -20,15 +20,8 @@ export default function LandingPage() {
           {/* Logo moved to be inline with title */}
           <div className=" flex flex-col items-center">
             <div className="flex items-center justify-center gap-4">
-              <Image
-                src="/camus_logo.png"
-                alt="Camus Logo"
-                width={80}
-                height={80}
-                className=""
-              />
               <h1 className="font-serif text-4xl font-medium tracking-tight text-gray-800 md:text-6xl">
-                <span className="text-taupe">CAMUS</span>: Creating Absurd, Meaningless and Useless Stuff
+                <span className="text-taupe">CAMUS</span>: World's first truly useless AI Agent
               </h1>
             </div>
           </div>
@@ -37,14 +30,14 @@ export default function LandingPage() {
             <span className="text-taupe">C</span>reating{" "}
             <span className="text-taupe">A</span>bsurd,{" "}
             <span className="text-taupe">M</span>eaningless{" "}
-            <span className="text-taupe">A</span>nd{" "}
+            <span>and{" "}</span>
             <span className="text-taupe">U</span>seless{" "}
             <span className="text-taupe">S</span>tuff
           </h2>
 
           <p className="mx-auto mt-6 max-w-2xl text-xl text-gray-500">
             The world's first AI agent meticulously engineered to produce visually impressive yet completely pointless
-            results with enterprise-grade reliability. (Like all the other AI products, our logo looks like an arse too)
+            results with enterprise-grade reliability.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
             <Link href="/agent">

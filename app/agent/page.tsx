@@ -691,52 +691,18 @@ function AgentPageContent() {
   const handleRetry = async () => {
     if (isLoading) return
 
-    addMessage({ role: "user", content: "retry" })
-    setIsLoading(true)
+    // Set input to "retry" and submit it as a normal message
+    setInput("Please continue")
 
-    try {
-      addMessage({ role: "thinking", content: "Retrying with renewed commitment to uselessness..." })
+    // Create a synthetic form event to trigger handleSubmit
+    const syntheticEvent = {
+      preventDefault: () => { },
+    } as React.FormEvent
 
-      const conversationHistory = messages.filter(msg =>
-        (msg.role === "user" || msg.role === "assistant") && msg.content !== "retry"
-      )
-
-      const response = await fetch('/api/agent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: "retry",
-          conversationHistory,
-          conversationId: currentConversationId,
-          sessionId
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      setMessages(prev => prev.filter(msg => msg.role !== "thinking"))
-
-      // Handle retry response (simplified version of handleSubmit logic)
-      // ... (similar streaming logic as above)
-
-    } catch (error) {
-      console.error('❌ Frontend: Error during retry:', error)
-
-      setMessages(prev => prev.filter(msg => msg.role !== "thinking"))
-
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      addMessage({
-        role: "assistant",
-        content: `Retry failed: ${errorMessage}\n\nEven my retries are beautifully useless!`,
-        isError: true
-      })
-    } finally {
-      setIsLoading(false)
-    }
+    // Wait for state update then submit
+    setTimeout(() => {
+      handleSubmit(syntheticEvent)
+    }, 0)
   }
 
   // Utility function to process think and artifact blocks from message content
