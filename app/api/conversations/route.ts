@@ -29,14 +29,32 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     const body = await request.json()
-    const { title, sessionId } = body
+    const { title, sessionId, message } = body
 
-    // Create new conversation
+    // Create new conversation with the provided title
     const conversation = await ConversationService.createConversation(
       session?.user?.id,
       sessionId,
-      title
+      title || "New Conversation"
     )
+
+    // If we have a first message but no specific title provided, generate an AI title
+    if (message && !title) {
+      // Generate AI title in the background
+      ConversationService.generateAITitle([
+        { role: 'user', content: message }
+      ]).then(async (aiTitle) => {
+        if (aiTitle) {
+          await ConversationService.updateConversationTitle(conversation.id, aiTitle)
+          console.log("🤖 API Route: Updated new conversation with AI-generated title", {
+            conversationId: conversation.id,
+            title: aiTitle
+          })
+        }
+      }).catch(titleError => {
+        console.warn("⚠️ API Route: Failed to generate AI title", titleError)
+      })
+    }
 
     return NextResponse.json({ conversation })
   } catch (error) {

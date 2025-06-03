@@ -276,20 +276,34 @@ export async function POST(request: NextRequest) {
     let currentConversationId = conversationId
     if (!currentConversationId) {
       try {
-        // Generate title from message
-        const title = ConversationService.generateConversationTitle([
-          { role: 'user', content: message }
-        ])
+        // Use a default title initially
+        const initialTitle = "New Conversation"
 
         const newConversation = await ConversationService.createConversation(
           session?.user?.id,
           sessionId,
-          title
+          initialTitle
         )
         currentConversationId = newConversation.id
+
+        // Generate AI title in the background
+        ConversationService.generateAITitle([
+          { role: 'user', content: message }
+        ]).then(async (aiTitle) => {
+          if (aiTitle && aiTitle !== initialTitle) {
+            await ConversationService.updateConversationTitle(currentConversationId, aiTitle)
+            console.log("🤖 API Route: Updated conversation with AI-generated title", {
+              conversationId: currentConversationId,
+              title: aiTitle
+            })
+          }
+        }).catch(titleError => {
+          console.warn("⚠️ API Route: Failed to generate AI title", titleError)
+        })
+
         console.log("📝 API Route: Created new conversation", {
           conversationId: currentConversationId,
-          title
+          initialTitle
         })
       } catch (dbError) {
         console.warn("⚠️ API Route: Failed to create conversation, continuing without DB sync", dbError)
@@ -316,18 +330,23 @@ export async function POST(request: NextRequest) {
             // Get current conversation to check its title
             const currentConversation = await ConversationService.getConversationById(currentConversationId)
 
-            // If the conversation has the default "New Task" title, update it with the first message
-            if (currentConversation.conversation.title === "New Task") {
-              const newTitle = ConversationService.generateConversationTitle([
+            // If the conversation has a default title, update it with AI-generated title
+            if (currentConversation.conversation.title === "New Task" ||
+              currentConversation.conversation.title === "New Conversation") {
+              // Generate AI title in the background
+              ConversationService.generateAITitle([
                 { role: 'user', content: message }
-              ])
-
-              await ConversationService.updateConversationTitle(currentConversationId, newTitle)
-
-              console.log("📝 API Route: Updated conversation title", {
-                conversationId: currentConversationId,
-                oldTitle: "New Task",
-                newTitle: newTitle
+              ]).then(async (aiTitle) => {
+                if (aiTitle) {
+                  await ConversationService.updateConversationTitle(currentConversationId, aiTitle)
+                  console.log("🤖 API Route: Updated conversation with AI-generated title", {
+                    conversationId: currentConversationId,
+                    oldTitle: currentConversation.conversation.title,
+                    newTitle: aiTitle
+                  })
+                }
+              }).catch(titleError => {
+                console.warn("⚠️ API Route: Failed to generate AI title", titleError)
               })
             }
           } catch (titleUpdateError) {

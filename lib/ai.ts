@@ -13,12 +13,11 @@ const openAIClient = new OpenAI({
 })
 
 // Vercel AI SDK OpenAI provider - use createOpenAI for custom configuration
-const aiProvider = createOpenAI({
+export const aiProvider = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: process.env.OPENAI_BASE_URL,
   compatibility: 'strict', // strict mode for OpenAI API
 })
-
 
 // Configuration
 const defaultModel = process.env.CHAT_MODEL || "gemini-2.0-flash-001"
@@ -467,5 +466,4 @@ export const aiAssistant = traceable(
   { name: "ai_assistant" }
 )
 
-// Export the OpenAI provider for advanced usage
-export { aiProvider }
+export { generateText }

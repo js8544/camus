@@ -606,6 +606,46 @@ export class ConversationService {
     return title.length > 50 ? title.substring(0, 50) + "..." : title
   }
 
+  // Generate conversation title using AI based on the first user message
+  static async generateAITitle(messages: MessageType[]): Promise<string> {
+    const firstUserMessage = messages.find(msg => msg.role === "user")
+    if (!firstUserMessage) {
+      return "New Conversation"
+    }
+
+    try {
+      // Import AI SDK functions
+      const { generateText, aiProvider } = await import("@/lib/ai")
+
+      // Get the AI to generate a concise, descriptive title
+      const result = await generateText({
+        model: aiProvider(process.env.CHAT_MODEL || "gemini-2.0-flash-001"),
+        messages: [
+          {
+            role: "system",
+            content: "Generate a concise, descriptive title (maximum 15 letters or 7 chinese characters) for a conversation that starts with this message. The title should capture the essence of what the user is asking or discussing. Don't use phrases like 'Conversation about' or 'Discussion on'. Just return the title itself with no quotes or additional text."
+          },
+          {
+            role: "user",
+            content: firstUserMessage.content
+          }
+        ],
+        temperature: 0.5,
+        maxTokens: 25
+      });
+
+      // Trim and limit length if needed
+      const title = result.text.trim();
+      return title.length > 15 ? title.substring(0, 15) + "..." : title;
+    } catch (error) {
+      console.error("Error generating AI title:", error);
+
+      // Fallback to the simple method if AI generation fails
+      const title = firstUserMessage.content.trim();
+      return title.length > 15 ? title.substring(0, 15) + "..." : title;
+    }
+  }
+
   // Update conversation timestamp (replaces the complex syncConversationState)
   static async updateConversationTimestamp(conversationId: string) {
     try {
