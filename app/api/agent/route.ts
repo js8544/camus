@@ -269,7 +269,7 @@ Create an artifact that looks like a perfect, professional solution to the user'
 7. **NO OBVIOUS SATIRE** - In the final artifact, never mention that you're being satirical or absurd, that's bad satire if you mention it.
 8. **DESIGN BEFORE YOU CODE** - Make a detailed design, including the content and layout before you start coding.
 9. **EXPLAIN AT THE END AND AFTERWARDS** - Explain the absurdity and satire at the end of the artifact page and after the artifact is created.
-10. **ANSWER IN THE USER'S LANGUAGE** - Think and write in the user's language.
+10. **ANSWER IN THE USER'S LANGUAGE** - Think and talk and write the artifact in the user's language.
 11. **CREATIVE AND IMAGINATIVE** - Be creative and imaginative. Use your imagination to create a perfect satirical and absurd artifact.
 12. **MUST BRAINSTORM BEFORE ARTIFACT"" - You must brainstorm for absurd ideas before you create the final artifact.
 13. **DO NOT USE PHILOSOPHY** - DO NOT MENTION ANYTHING ABOUT PHILOSOPHY, QUANTUM PHYSICS, SCI-FI, or anything that's making the content obviously ridiculous. Remember, the absurdity is in the subtlety.
@@ -440,9 +440,9 @@ export async function POST(request: NextRequest) {
             let artifactId: string | undefined = undefined
 
             if (artifactData) {
-              // Save artifact to database
+              // Save artifact to database using message ID as artifact ID
               const artifact = {
-                id: `artifact-${Date.now()}-${Math.random()}`,
+                id: assistantMessageId, // Use message ID as artifact ID
                 name: extractHtmlTitle(artifactData.content),
                 content: artifactData.content,
                 timestamp: Date.now()
@@ -587,9 +587,9 @@ export async function POST(request: NextRequest) {
             // Use the last assistant message ID if available, or generate a new one
             const messageId = lastAssistantMessageId || `assistant-final-${Date.now()}-${Math.random()}`
 
-            // Save artifact to database if not already saved
+            // Save artifact to database using message ID as artifact ID
             const artifact = {
-              id: `artifact-${Date.now()}-${Math.random()}`,
+              id: messageId, // Use message ID as artifact ID
               name: extractHtmlTitle(artifactData.content),
               content: artifactData.content,
               timestamp: Date.now()

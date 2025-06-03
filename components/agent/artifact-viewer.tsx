@@ -1,7 +1,8 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Code, Download, Eye, Maximize2, Sparkles } from "lucide-react"
+import { Check, Code, Copy, Download, Eye, Maximize2, Share2, Sparkles } from "lucide-react"
+import { useState } from "react"
 
 export type ArtifactItem = {
   id: string
@@ -27,6 +28,9 @@ export function ArtifactViewer({
 }: ArtifactViewerProps) {
   const isStreaming = streamingArtifact?.id === artifact.id
   const displayContent = isStreaming ? streamingArtifact.content : artifact.content
+  const [isSharing, setIsSharing] = useState(false)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [showShareSuccess, setShowShareSuccess] = useState(false)
 
   const formatTimestamp = (timestamp: number): string => {
     return new Date(timestamp).toLocaleTimeString()
@@ -42,6 +46,51 @@ export function ArtifactViewer({
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
+  }
+
+  const handleShare = async () => {
+    if (isSharing) return
+
+    setIsSharing(true)
+    try {
+      const response = await fetch(`/api/artifacts/${artifact.id}/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create share link')
+      }
+
+      const data = await response.json()
+      setShareUrl(data.shareUrl)
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(data.shareUrl)
+      setShowShareSuccess(true)
+
+      // Hide success message after 2 seconds
+      setTimeout(() => {
+        setShowShareSuccess(false)
+      }, 2000)
+    } catch (error) {
+      console.error('Error sharing artifact:', error)
+      alert('Failed to create share link')
+    } finally {
+      setIsSharing(false)
+    }
+  }
+
+  const copyShareUrl = async () => {
+    if (shareUrl) {
+      await navigator.clipboard.writeText(shareUrl)
+      setShowShareSuccess(true)
+      setTimeout(() => {
+        setShowShareSuccess(false)
+      }, 2000)
+    }
   }
 
   return (
@@ -62,7 +111,7 @@ export function ArtifactViewer({
           <span className="text-sm text-gray-500">{formatTimestamp(artifact.timestamp)}</span>
         </div>
 
-        {/* Controls: Tabs, Download, and Fullscreen */}
+        {/* Controls: Tabs, Share, Download, and Fullscreen */}
         <div className="flex items-center justify-between">
           <div className="flex space-x-1">
             <Button
@@ -93,6 +142,22 @@ export function ArtifactViewer({
           </div>
 
           <div className="flex items-center space-x-2">
+            {/* Share Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShare}
+              disabled={isStreaming || isSharing}
+              className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50 relative"
+            >
+              {showShareSuccess ? (
+                <Check className="h-3 w-3 text-green-500" />
+              ) : (
+                <Share2 className="h-3 w-3" />
+              )}
+              {isSharing && <span className="ml-1 text-xs">...</span>}
+            </Button>
+
             <Button
               variant="outline"
               size="sm"
@@ -113,6 +178,30 @@ export function ArtifactViewer({
             </Button>
           </div>
         </div>
+
+        {/* Share URL Display */}
+        {shareUrl && (
+          <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-md">
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-green-600 font-medium mb-1">Shareable link created:</p>
+                <div className="flex items-center space-x-2">
+                  <code className="text-xs text-green-700 bg-green-100 px-2 py-1 rounded font-mono truncate">
+                    {shareUrl}
+                  </code>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={copyShareUrl}
+                    className="text-green-600 hover:text-green-700 hover:bg-green-100 p-1 h-auto"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Content */}

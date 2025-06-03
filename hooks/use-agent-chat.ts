@@ -94,28 +94,57 @@ export function useAgentChat() {
     }
   }
 
-  const addMessage = (message: MessageType) => {
-    setMessages(prev => [...prev, { ...message, id: message.id || Date.now().toString() }])
-
-    // Check if this is an assistant message with an artifact
+  // Consolidated artifact processing function
+  const processArtifactInMessage = (message: MessageType) => {
     if (message.role === "assistant" && message.content) {
       const artifactMatch = message.content.match(/```artifact\n([\s\S]*?)\n```/)
       if (artifactMatch) {
         const htmlContent = artifactMatch[1]
         console.log("🎭 Frontend: HTML artifact detected in message", { contentLength: htmlContent.length })
 
-        const artifact: ArtifactItem = {
-          id: `artifact-${Date.now()}`,
-          name: generateUniqueArtifactName(extractHtmlTitle(htmlContent)),
-          content: htmlContent,
-          timestamp: Date.now()
+        // Check if this artifact content already exists
+        const existingArtifact = artifacts.find(a => a.content === htmlContent)
+        if (existingArtifact) {
+          // Use existing artifact instead of creating duplicate
+          setCurrentDisplayResult(existingArtifact)
+          setGeneratedHtml(existingArtifact.content)
+          return
         }
 
-        setArtifacts(prev => [...prev, artifact])
-        setGeneratedHtml(htmlContent)
-        setCurrentDisplayResult(artifact)
+        // Only create artifact if we have an artifactId from backend
+        if (message.artifactId) {
+          const artifact: ArtifactItem = {
+            id: message.artifactId, // Use backend-provided ID (which is now message ID)
+            name: generateUniqueArtifactName(extractHtmlTitle(htmlContent)),
+            content: htmlContent,
+            timestamp: Date.now()
+          }
+
+          setArtifacts(prev => [...prev, artifact])
+          setGeneratedHtml(htmlContent)
+          setCurrentDisplayResult(artifact)
+        } else {
+          // Fallback: use message ID if backend doesn't provide artifactId
+          const artifactId = message.id || `temp-${Date.now()}`
+          const artifact: ArtifactItem = {
+            id: artifactId, // Use message ID as artifact ID
+            name: generateUniqueArtifactName(extractHtmlTitle(htmlContent)),
+            content: htmlContent,
+            timestamp: Date.now()
+          }
+
+          setArtifacts(prev => [...prev, artifact])
+          setGeneratedHtml(htmlContent)
+          setCurrentDisplayResult(artifact)
+          console.warn("🎭 Frontend: Using message ID as artifact ID fallback:", artifactId)
+        }
       }
     }
+  }
+
+  const addMessage = (message: MessageType) => {
+    setMessages(prev => [...prev, { ...message, id: message.id || Date.now().toString() }])
+    processArtifactInMessage(message)
   }
 
   const updateLastMessage = (updates: Partial<MessageType>) => {
@@ -125,25 +154,8 @@ export function useAgentChat() {
         const lastMessage = { ...newMessages[newMessages.length - 1], ...updates }
         newMessages[newMessages.length - 1] = lastMessage
 
-        // Check if this update contains an artifact
-        if (updates.content && lastMessage.role === "assistant") {
-          const artifactMatch = lastMessage.content.match(/```artifact\n([\s\S]*?)\n```/)
-          if (artifactMatch) {
-            const htmlContent = artifactMatch[1]
-            console.log("🎭 Frontend: HTML artifact detected in message update", { contentLength: htmlContent.length })
-
-            const artifact: ArtifactItem = {
-              id: `artifact-${Date.now()}`,
-              name: generateUniqueArtifactName(extractHtmlTitle(htmlContent)),
-              content: htmlContent,
-              timestamp: Date.now()
-            }
-
-            setArtifacts(prev => [...prev, artifact])
-            setGeneratedHtml(htmlContent)
-            setCurrentDisplayResult(artifact)
-          }
-        }
+        // Process artifacts in the updated message
+        processArtifactInMessage(lastMessage)
       }
       return newMessages
     })

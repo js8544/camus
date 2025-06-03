@@ -160,6 +160,7 @@ model Artifact {
   messageId   String? // Message that generated this artifact
   userId      String? // Creator (could be null for anonymous)
   isPublic    Boolean      @default(false)
+  shareSlug   String?      @unique // For public sharing URLs
   views       Int          @default(0)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt

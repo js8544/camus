@@ -751,4 +751,120 @@ export class ConversationService {
       throw new Error("Failed to update tool message with result")
     }
   }
+
+  // Share an artifact by making it public and setting a slug
+  static async shareArtifact(artifactId: string, slug: string) {
+    try {
+      console.log("🔍 Attempting to share artifact:", { artifactId, slug })
+
+      // First check if the artifact exists
+      const existingArtifact = await prisma.artifact.findUnique({
+        where: { id: artifactId }
+      })
+
+      console.log("🔍 Artifact lookup result:", existingArtifact ? {
+        id: existingArtifact.id,
+        name: existingArtifact.name,
+        exists: true
+      } : { exists: false })
+
+      if (!existingArtifact) {
+        throw new Error(`Artifact with ID ${artifactId} not found`)
+      }
+
+      // Update the artifact to be public with a slug
+      const sharedArtifact = await prisma.artifact.update({
+        where: { id: artifactId },
+        data: {
+          isPublic: true,
+          shareSlug: slug
+        }
+      })
+
+      console.log("✅ Successfully shared artifact:", {
+        id: sharedArtifact.id,
+        slug: sharedArtifact.shareSlug
+      })
+
+      return {
+        id: sharedArtifact.id,
+        name: sharedArtifact.name,
+        content: sharedArtifact.content,
+        slug: sharedArtifact.shareSlug,
+        createdAt: sharedArtifact.createdAt.toISOString(),
+        timestamp: Number(sharedArtifact.timestamp)
+      }
+    } catch (error) {
+      console.error("Error sharing artifact:", error)
+      throw new Error("Failed to share artifact")
+    }
+  }
+
+  // Get an artifact by its slug (for public sharing)
+  static async getArtifactBySlug(slug: string) {
+    try {
+      const artifact = await prisma.artifact.findUnique({
+        where: {
+          shareSlug: slug,
+          isPublic: true // Only return public artifacts
+        }
+      })
+
+      if (!artifact) {
+        return null
+      }
+
+      return {
+        id: artifact.id,
+        name: artifact.name,
+        content: artifact.content,
+        slug: artifact.shareSlug,
+        createdAt: artifact.createdAt.toISOString(),
+        timestamp: Number(artifact.timestamp)
+      }
+    } catch (error) {
+      console.error("Error fetching artifact by slug:", error)
+      throw new Error("Failed to fetch artifact")
+    }
+  }
+
+  // Increment artifact view count
+  static async incrementArtifactViews(artifactId: string) {
+    try {
+      await prisma.artifact.update({
+        where: { id: artifactId },
+        data: {
+          views: {
+            increment: 1
+          }
+        }
+      })
+    } catch (error) {
+      console.error("Error incrementing artifact views:", error)
+      // Don't throw - this shouldn't break the user experience
+    }
+  }
+
+  // Make an artifact private (unshare)
+  static async unshareArtifact(artifactId: string) {
+    try {
+      const artifact = await prisma.artifact.update({
+        where: { id: artifactId },
+        data: {
+          isPublic: false,
+          shareSlug: null
+        }
+      })
+
+      return {
+        id: artifact.id,
+        name: artifact.name,
+        isPublic: artifact.isPublic,
+        slug: artifact.shareSlug
+      }
+    } catch (error) {
+      console.error("Error unsharing artifact:", error)
+      throw new Error("Failed to unshare artifact")
+    }
+  }
 } 

@@ -166,7 +166,7 @@ function AgentPageContent() {
         })
 
         setMessages(processedMessages)
-        console.log("📝 Processed messages with think/artifact blocks:", {
+        console.log("�� Processed messages with think/artifact blocks:", {
           total: processedMessages.length,
           withThinking: processedMessages.filter((m: any) => m.thinkingContent).length,
           withArtifacts: processedMessages.filter((m: any) => m.artifactId).length
@@ -455,14 +455,15 @@ function AgentPageContent() {
                 const artifactEndMatch = messageContent.match(/```artifact\n([\s\S]*?)\n```/)
 
                 if (artifactStartMatch) {
-                  const artifactId = streamingArtifact?.id || `artifact-${Date.now()}`
+                  // Use the current message ID as the artifact ID
+                  let artifactId = streamingArtifact?.id || currentMessageId
                   artifactIdForMessage = artifactId
 
                   if (artifactEndMatch) {
                     // Complete artifact
                     const htmlContent = artifactEndMatch[1]
                     const artifact = {
-                      id: artifactId,
+                      id: artifactId, // This is now the message ID
                       name: generateUniqueArtifactName(extractHtmlTitle(htmlContent)),
                       content: htmlContent,
                       timestamp: streamingArtifact?.timestamp || Date.now()
@@ -485,7 +486,7 @@ function AgentPageContent() {
                     // Streaming artifact
                     const partialContent = messageContent.split('```artifact\n')[1] || ''
                     const artifact = {
-                      id: artifactId,
+                      id: artifactId, // This is now the message ID
                       name: streamingArtifact?.name || `Streaming...`,
                       content: partialContent,
                       timestamp: streamingArtifact?.timestamp || Date.now()
@@ -727,20 +728,34 @@ function AgentPageContent() {
     if (artifactMatch) {
       const htmlContent = artifactMatch[1]
 
-      // Find or create artifact
-      let foundArtifact = allArtifacts.find(a => a.content === htmlContent)
+      // Use the message ID as the artifact ID
+      artifactId = message.id
+
+      // Find existing artifact by ID (message ID) or create new one
+      let foundArtifact = allArtifacts.find(a => a.id === artifactId)
+
       if (!foundArtifact) {
-        // Create new artifact if not found
+        // Create new artifact using message ID
         foundArtifact = {
-          id: `artifact-${Date.now()}-${Math.random()}`,
+          id: artifactId, // Use message ID as artifact ID
           name: extractHtmlTitle(htmlContent) || 'Untitled',
           content: htmlContent,
           timestamp: Date.now()
         }
         allArtifacts.push(foundArtifact)
+        console.log("📦 Created artifact from message:", {
+          messageId: message.id,
+          artifactId: artifactId,
+          artifactName: foundArtifact.name
+        })
+      } else {
+        console.log("🔗 Found existing artifact for message:", {
+          messageId: message.id,
+          artifactId: foundArtifact.id,
+          artifactName: foundArtifact.name
+        })
       }
 
-      artifactId = foundArtifact.id
       content = content.replace(/```artifact\n[\s\S]*?\n```/g, '[Artifact generated - view in right panel]')
     }
 
