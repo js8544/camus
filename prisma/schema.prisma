@@ -1,0 +1,252 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String?   @unique
+  emailVerified DateTime?
+  password      String? // For credentials-based authentication
+  name          String?
+  avatar        String?
+  image         String? // NextAuth.js compatibility
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  conversations Conversation[]
+  artifacts     Artifact[]
+  sessions      Session[]
+  accounts      Account[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  userId    String?
+  sessionId String    @unique // For anonymous users
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  expiresAt DateTime?
+
+  // Relations
+  user          User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+
+  @@map("sessions")
+}
+
+model Conversation {
+  id          String   @id @default(cuid())
+  title       String?
+  userId      String?
+  sessionId   String?
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session  Session?  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id              String      @id @default(cuid())
+  conversationId  String
+  role            MessageRole
+  content         String
+  toolName        String? // For tool messages
+  imageUrl        String? // For messages with images
+  toolResultId    String? // Reference to tool result
+  toolCallId      String? // For tracking tool calls
+  artifactId      String? // Reference to artifact
+  thinkingContent String? // For thinking blocks
+  isError         Boolean     @default(false)
+  isIncomplete    Boolean     @default(false) // For messages that were aborted/interrupted
+  metadata        Json? // Store additional data like model used, tokens, etc.
+  createdAt       DateTime    @default(now())
+
+  // Relations
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  toolCalls    ToolCall[]
+  artifacts    Artifact[]
+
+  @@map("messages")
+}
+
+model ToolCall {
+  id        String     @id @default(cuid())
+  messageId String
+  toolName  String // e.g., "web_search", "image_generation", "content_extraction"
+  input     Json // Tool input parameters
+  output    Json? // Tool output/result
+  status    ToolStatus @default(PENDING)
+  duration  Int? // Execution time in milliseconds
+  error     String? // Error message if failed
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // Relations
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@map("tool_calls")
+}
+
+// New model for ToolResults (separate from ToolCall for better tracking)
+model ToolResult {
+  id          String   @id @default(cuid())
+  toolName    String
+  args        Json // Tool arguments
+  result      Json // Tool result data
+  displayName String
+  timestamp   BigInt // Unix timestamp - changed from Int to BigInt for JS timestamps
+  createdAt   DateTime @default(now())
+
+  @@map("tool_results")
+}
+
+model Artifact {
+  id          String       @id @default(cuid())
+  name        String // Changed from title to match frontend
+  description String?
+  type        ArtifactType @default(HTML)
+  content     String // HTML, markdown, or other content
+  timestamp   BigInt // Unix timestamp to match frontend - changed from Int to BigInt for JS timestamps
+  metadata    Json? // Additional metadata about the artifact
+  messageId   String? // Message that generated this artifact
+  userId      String? // Creator (could be null for anonymous)
+  isPublic    Boolean      @default(false)
+  views       Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relations
+  message  Message?          @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  user     User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  versions ArtifactVersion[]
+  tags     ArtifactTag[]
+
+  @@map("artifacts")
+}
+
+model ArtifactVersion {
+  id         String   @id @default(cuid())
+  artifactId String
+  version    Int
+  content    String
+  changelog  String?
+  createdAt  DateTime @default(now())
+
+  // Relations
+  artifact Artifact @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+
+  @@unique([artifactId, version])
+  @@map("artifact_versions")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String? // Hex color for UI
+  createdAt DateTime @default(now())
+
+  // Relations
+  artifacts ArtifactTag[]
+
+  @@map("tags")
+}
+
+model ArtifactTag {
+  artifactId String
+  tagId      String
+
+  // Relations
+  artifact Artifact @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([artifactId, tagId])
+  @@map("artifact_tags")
+}
+
+model Analytics {
+  id             String   @id @default(cuid())
+  event          String // e.g., "conversation_started", "artifact_generated", "tool_used"
+  userId         String?
+  sessionId      String?
+  conversationId String?
+  artifactId     String?
+  metadata       Json? // Additional event data
+  timestamp      DateTime @default(now())
+
+  @@map("analytics")
+}
+
+// Enums
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+  THINKING // Added to match frontend
+  TOOL // Added to match frontend
+  TOOL_RESULT // Added to match frontend
+}
+
+enum ToolStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum ArtifactType {
+  HTML
+  MARKDOWN
+  IMAGE
+  TEXT
+  JSON
+  CODE
+}

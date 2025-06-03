@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 26 9% 50%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 26 9% 50%;
+    --radius: 0.25rem;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 26 9% 50%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 26 9% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  /* Enhanced prose list styling with better spacing */
+  .prose ul {
+    @apply my-6;
+  }
+  
+  .prose ol {
+    @apply my-6;
+  }
+  
+  .prose li {
+    @apply my-3 leading-relaxed;
+  }
+  
+  .prose li > p {
+    @apply my-2;
+  }
+  
+  .prose li > ul,
+  .prose li > ol {
+    @apply my-4 ml-4;
+  }
+  
+  .prose ul li {
+    @apply pl-2;
+  }
+  
+  .prose ol li {
+    @apply pl-2;
+  }
+  
+  /* For lists not in prose containers */
+  ul:not(.no-spacing) li {
+    @apply mb-3 leading-relaxed;
+  }
+  
+  ol:not(.no-spacing) li {
+    @apply mb-3 leading-relaxed;
+  }
+  
+  /* Nested list spacing */
+  ul ul,
+  ol ol,
+  ul ol,
+  ol ul {
+    @apply mt-3 mb-3;
+  }
+}
