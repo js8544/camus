@@ -11,7 +11,7 @@ export async function POST(
     const session = await getServerSession(authOptions)
     const { id: conversationId } = await params
     const body = await request.json()
-    const { content, role, messageId, isIncomplete, ...options } = body
+    const { content, role, messageId, isIncomplete, artifactId, ...options } = body
 
     if (!conversationId) {
       return NextResponse.json(
@@ -49,6 +49,7 @@ export async function POST(
           conversationId,
           content,
           messageId,
+          artifactId,
           options
         )
       }

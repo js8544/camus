@@ -128,6 +128,7 @@ describe('/api/conversations/[id]/messages', () => {
         'conv-1',
         'Hello there!',
         'msg-2',
+        undefined,
         { thinkingContent: 'Let me think...' }
       )
       expect(response.status).toBe(200)

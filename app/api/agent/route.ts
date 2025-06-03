@@ -29,6 +29,35 @@ const getToolUsageMessage = (toolName: string, args: any): string => {
   }
 }
 
+// Helper function to extract artifacts from text content
+const extractArtifact = (content: string) => {
+  const artifactMatch = content.match(/```artifact\n([\s\S]*?)\n```/)
+  if (artifactMatch) {
+    const htmlContent = artifactMatch[1]
+    return {
+      content: htmlContent,
+      replacedContent: content.replace(/```artifact\n[\s\S]*?\n```/g, '[Artifact generated - view in right panel]')
+    }
+  }
+  return null
+}
+
+// Helper function to extract HTML title or generate a default one
+const extractHtmlTitle = (html: string): string => {
+  const titleMatch = html.match(/<title>(.*?)<\/title>/)
+  if (titleMatch && titleMatch[1]) {
+    return titleMatch[1]
+  }
+
+  // Try to extract h1 if no title
+  const h1Match = html.match(/<h1>(.*?)<\/h1>/)
+  if (h1Match && h1Match[1]) {
+    return h1Match[1]
+  }
+
+  return 'Generated Artifact'
+}
+
 const CAMUS_SYSTEM_PROMPT = `You are Camus (Creating Absurd, Meaningless and Useless Stuff), a revolutionary AI agent that creates perfectly formatted, seemingly comprehensive responses that appear to exactly match user requests but contain fundamentally meaningless content.
 
 ## Core Philosophy
@@ -375,6 +404,9 @@ export async function POST(request: NextRequest) {
     // Track processed tool calls to prevent duplicates
     const processedToolCalls = new Set<string>()
 
+    // Track artifacts for the current conversation
+    let lastAssistantMessageId: string | null = null
+
     const result = await streamText({
       model: aiProvider(process.env.CHAT_MODEL || "gemini-2.0-flash-001"),
       messages,
@@ -400,16 +432,49 @@ export async function POST(request: NextRequest) {
         if (currentConversationId && step.text && step.text.trim()) {
           try {
             const assistantMessageId = `assistant-${Date.now()}-${Math.random()}`
+            lastAssistantMessageId = assistantMessageId
 
-            // Keep artifact blocks as-is - they are part of the actual response content
-            // The frontend will handle displaying artifacts properly
-            const cleanedContent = step.text
+            // Extract artifact if present
+            const artifactData = extractArtifact(step.text)
+            let cleanedContent = step.text
+            let artifactId: string | undefined = undefined
+
+            if (artifactData) {
+              // Save artifact to database
+              const artifact = {
+                id: `artifact-${Date.now()}-${Math.random()}`,
+                name: extractHtmlTitle(artifactData.content),
+                content: artifactData.content,
+                timestamp: Date.now()
+              }
+
+              try {
+                const savedArtifact = await ConversationService.saveArtifact(
+                  artifact,
+                  assistantMessageId,
+                  session?.user?.id
+                )
+
+                artifactId = savedArtifact.id
+                cleanedContent = artifactData.replacedContent
+
+                console.log("🎨 API Route: Saved artifact", {
+                  artifactId: savedArtifact.id,
+                  artifactName: savedArtifact.name,
+                  contentLength: artifactData.content.length
+                })
+              } catch (artifactError) {
+                console.warn("⚠️ API Route: Failed to save artifact", artifactError)
+              }
+            }
+
             // Only save if there's meaningful content after cleaning
             if (cleanedContent.trim()) {
               await ConversationService.saveAssistantMessage(
                 currentConversationId,
                 cleanedContent,
-                assistantMessageId
+                assistantMessageId,
+                artifactId
               )
 
               console.log("💾 API Route: Saved assistant message for step", {
@@ -417,7 +482,8 @@ export async function POST(request: NextRequest) {
                 assistantMessageId,
                 originalLength: step.text.length,
                 cleanedLength: cleanedContent.length,
-                isContinued: step.isContinued
+                isContinued: step.isContinued,
+                hasArtifact: !!artifactId
               })
             }
           } catch (saveError) {
@@ -512,6 +578,52 @@ export async function POST(request: NextRequest) {
           totalToolResults: result.toolResults?.length || 0,
           responseText: result.text?.substring(0, 200) + (result.text && result.text.length > 200 ? "..." : "")
         })
+
+        // Check for artifacts in the final complete response that might have been missed in streaming
+        if (currentConversationId && result.text) {
+          const artifactData = extractArtifact(result.text)
+
+          if (artifactData) {
+            // Use the last assistant message ID if available, or generate a new one
+            const messageId = lastAssistantMessageId || `assistant-final-${Date.now()}-${Math.random()}`
+
+            // Save artifact to database if not already saved
+            const artifact = {
+              id: `artifact-${Date.now()}-${Math.random()}`,
+              name: extractHtmlTitle(artifactData.content),
+              content: artifactData.content,
+              timestamp: Date.now()
+            }
+
+            try {
+              const savedArtifact = await ConversationService.saveArtifact(
+                artifact,
+                messageId,
+                session?.user?.id
+              )
+
+              // If we didn't have a previous message ID, we need to create a new assistant message
+              if (!lastAssistantMessageId) {
+                await ConversationService.saveAssistantMessage(
+                  currentConversationId,
+                  artifactData.replacedContent,
+                  messageId,
+                  savedArtifact.id
+                )
+              }
+
+              console.log("🎨 API Route: Saved final artifact", {
+                artifactId: savedArtifact.id,
+                artifactName: savedArtifact.name,
+                contentLength: artifactData.content.length,
+                messageId: messageId,
+                createdNewMessage: !lastAssistantMessageId
+              })
+            } catch (artifactError) {
+              console.warn("⚠️ API Route: Failed to save final artifact", artifactError)
+            }
+          }
+        }
 
         // Note: Assistant messages are now saved incrementally in onStepFinish for each step
         // This prevents merging multiple assistant message chunks into one combined message

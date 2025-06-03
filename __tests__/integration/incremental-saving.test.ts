@@ -241,6 +241,7 @@ describe('Incremental Saving Architecture', () => {
         conversationId,
         messageContent,
         messageId,
+        undefined, // artifactId
         options
       )
 

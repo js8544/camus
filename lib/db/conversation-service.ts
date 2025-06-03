@@ -318,6 +318,7 @@ export class ConversationService {
     conversationId: string,
     content: string,
     messageId?: string,
+    artifactId?: string,
     options?: {
       toolName?: string
       imageUrl?: string
@@ -331,6 +332,7 @@ export class ConversationService {
         id: messageId,
         role: "assistant",
         content: content,
+        artifactId,
         ...options
       }
 
