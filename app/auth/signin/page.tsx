@@ -314,11 +314,12 @@ function AuthPageContent() {
                         name="invitationCode"
                         type="text"
                         placeholder="Enter any code (e.g., TEST123)"
+                        defaultValue="PUSH-THE-ROCK"
                         required
                         className="border-gray-300 focus-visible:ring-taupe"
                       />
                       <p className="text-xs text-gray-500">
-                        For testing: Any non-empty code will work. Required to join the exclusive world of uselessness.
+                        Required to join the exclusive world of uselessness.
                       </p>
                     </div>
                     <div className="space-y-2">
