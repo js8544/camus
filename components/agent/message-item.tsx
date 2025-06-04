@@ -2,8 +2,8 @@
 
 import { Button } from "@/components/ui/button"
 import { MarkdownRenderer } from "@/components/ui/markdown"
-import { ChevronDown, ChevronRight } from "lucide-react"
-import { JSX } from "react"
+import { ChevronDown, ChevronRight, Sparkles } from "lucide-react"
+import { JSX, useEffect, useState } from "react"
 
 export type MessageType = {
   role: "user" | "assistant" | "thinking" | "tool" | "tool-result"
@@ -29,6 +29,9 @@ type MessageItemProps = {
   onRetry: () => void
   renderArtifactBlock: (artifactId: string) => JSX.Element
   isSharedMode?: boolean
+  setCurrentDisplayResult?: (result: any) => void
+  setGeneratedHtml?: (html: string) => void
+  setIsFullscreen?: (isFullscreen: boolean) => void
 }
 
 export function MessageItem({
@@ -40,8 +43,30 @@ export function MessageItem({
   onToggleThinking,
   onRetry,
   renderArtifactBlock,
-  isSharedMode = false
+  isSharedMode = false,
+  setCurrentDisplayResult = () => { },
+  setGeneratedHtml = () => { },
+  setIsFullscreen = () => { }
 }: MessageItemProps) {
+  const [isFullscreenLocal, setIsFullscreenLocal] = useState(false);
+
+  // Add debug log on mount
+  useEffect(() => {
+    if (message.role === "assistant") {
+      // Log message information for debugging
+      console.log(`[DEBUG] Message ${index} content type check:`, {
+        id: message.id,
+        artifactId: message.artifactId,
+        hasHtmlDoctype: message.content.includes("<!DOCTYPE html>"),
+        hasHtmlTag: message.content.includes("<html"),
+        hasHeadTag: message.content.includes("<head"),
+        hasHtmlClose: message.content.includes("</html>"),
+        contentPreview: message.content.substring(0, 100) + "...",
+        contentLength: message.content.length
+      });
+    }
+  }, [message, index]);
+
   const getToolActionText = (toolName: string): string => {
     switch (toolName) {
       case 'Web Search': return 'searching for'
@@ -148,12 +173,165 @@ export function MessageItem({
     )
   }
 
+  const renderFullscreenIframe = (htmlContent: string) => {
+    if (!isFullscreenLocal) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg w-full h-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
+          <div className="flex justify-between items-center p-4 border-b">
+            <h3 className="text-lg font-medium">HTML Content</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsFullscreenLocal(false)}
+              className="hover:bg-gray-100"
+            >
+              Close
+            </Button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <iframe
+              srcDoc={htmlContent}
+              title="HTML Content Fullscreen"
+              className="w-full h-full border-none"
+              sandbox="allow-scripts allow-modals"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Function to extract title from HTML content
+  const extractTitleFromHtml = (htmlContent: string): string => {
+    const titleMatch = htmlContent.match(/<title>(.*?)<\/title>/i);
+    return titleMatch && titleMatch[1] ? titleMatch[1] : "HTML Content";
+  };
+
+  // Function to render HTML block
+  const renderHtmlBlock = (htmlContent: string): JSX.Element => {
+    const title = extractTitleFromHtml(htmlContent);
+
+    return (
+      <div
+        className="my-3 p-4 bg-gradient-to-r from-beige to-gray-50 border border-gray-300 rounded-lg cursor-pointer hover:border-taupe hover:shadow-sm transition-all"
+        onClick={() => {
+          console.log("[DEBUG] HTML block clicked, creating temp artifact");
+          const tempArtifact = {
+            id: `temp-${Date.now()}`,
+            name: title,
+            content: htmlContent,
+            timestamp: Date.now()
+          };
+          setCurrentDisplayResult(tempArtifact);
+          setGeneratedHtml(htmlContent);
+          setIsFullscreen(true);
+        }}
+      >
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-taupe rounded-lg flex items-center justify-center">
+            <Sparkles className="h-6 w-6 text-white" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-gray-800 font-medium">
+              {title}
+            </h3>
+            <p className="text-gray-600 text-sm">
+              Click to open website
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderMessageContent = (): JSX.Element => {
-    // Check if this message contains an artifact placeholder (only during streaming)
-    // Artifact references are not persisted to database, so this will only appear in real-time
+    console.log(`[DEBUG] Rendering message ${index}, artifactId:`, message.artifactId);
+
+    // Special handling for raw ```artifact blocks - convert them to proper format
+    if (message.role === "assistant" && message.content.includes("```artifact")) {
+      console.log(`[DEBUG] Message ${index} contains raw artifact block`);
+
+      // Extract the artifact content
+      const artifactMatch = message.content.match(/```artifact\n([\s\S]*?)\n```/);
+      if (artifactMatch) {
+        const htmlContent = artifactMatch[1];
+
+        // Get content before and after artifact block
+        const contentWithoutArtifact = message.content.replace(/```artifact\n[\s\S]*?\n```/g, '[Artifact generated - view in right panel]');
+
+        // If we already have an artifactId set, use the existing handling
+        if (message.artifactId) {
+          return (
+            <div>
+              <MarkdownRenderer content={contentWithoutArtifact} />
+              {renderArtifactBlock(message.artifactId)}
+            </div>
+          );
+        }
+
+        // Otherwise, create a temporary artifact
+        console.log(`[DEBUG] Creating temporary artifact from artifact block`);
+        const title = extractTitleFromHtml(htmlContent) || "HTML Content";
+
+        return (
+          <div>
+            <MarkdownRenderer content={contentWithoutArtifact} />
+            <div
+              className="my-3 p-4 bg-gradient-to-r from-beige to-gray-50 border border-gray-300 rounded-lg cursor-pointer hover:border-taupe hover:shadow-sm transition-all"
+              onClick={() => {
+                console.log("[DEBUG] Artifact block clicked, creating temp artifact");
+                const tempArtifact = {
+                  id: `temp-${Date.now()}`,
+                  name: title,
+                  content: htmlContent,
+                  timestamp: Date.now()
+                };
+                setCurrentDisplayResult(tempArtifact);
+                setGeneratedHtml(htmlContent);
+                setIsFullscreen(true);
+              }}
+            >
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-taupe rounded-lg flex items-center justify-center">
+                  <Sparkles className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-gray-800 font-medium">
+                    {title}
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    Click to open website
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+    }
+
+    // Check if this message contains an artifact placeholder
     if (message.artifactId) {
-      // Split content by artifact placeholder and render the artifact block
-      const parts = message.content.split(/\[Artifact (?:generated|streaming) - view in (?:the )?right panel\]/g)
+      console.log(`[DEBUG] Message ${index} has artifactId:`, message.artifactId);
+
+      // Detect different artifact placeholder patterns including database stored messages
+      const artifactPatterns = [
+        /\[Artifact (?:generated|streaming) - view in (?:the )?right panel\]/g,
+        /\[Artifact generated\]/g,
+        /\[Artifact ID: [a-zA-Z0-9-]+\]/g
+      ];
+
+      // Try each pattern
+      let parts: string[] = [message.content];
+      for (const pattern of artifactPatterns) {
+        if (pattern.test(message.content)) {
+          console.log(`[DEBUG] Message ${index} matched pattern:`, pattern);
+          parts = message.content.split(pattern);
+          break;
+        }
+      }
 
       return (
         <div>
@@ -167,7 +345,69 @@ export function MessageItem({
       )
     }
 
-    // Regular message content (including simple "[Artifact generated]" text from database)
+    // Check for HTML content in the message that might be an artifact
+    if (message.role === "assistant" &&
+      (message.content.includes("<!DOCTYPE html>") ||
+        message.content.includes("<html") ||
+        message.content.includes("<head")) &&
+      message.content.includes("</html>")) {
+
+      console.log(`[DEBUG] Message ${index} contains HTML content!`);
+
+      // Extract the HTML content
+      const htmlMatch = message.content.match(/<!DOCTYPE html>[\s\S]*<\/html>/i);
+      const htmlContent = htmlMatch ? htmlMatch[0] : message.content;
+
+      // Extract text outside of HTML
+      const nonHtmlParts = message.content.split(/<!DOCTYPE html>[\s\S]*<\/html>/i);
+      const nonHtmlContent = nonHtmlParts.filter(Boolean).join('\n\n');
+
+      console.log(`[DEBUG] Extracted HTML of length ${htmlContent.length}, non-HTML parts:`, nonHtmlParts.length);
+
+      return (
+        <div>
+          {nonHtmlContent && <MarkdownRenderer content={nonHtmlContent} />}
+          {renderHtmlBlock(htmlContent)}
+        </div>
+      );
+    }
+
+    // Try direct approach to detect HTML content
+    const contentStr = message.content.toString();
+    if (message.role === "assistant" && contentStr.indexOf("<!DOCTYPE html>") >= 0) {
+      console.log(`[DEBUG] Message ${index} contains HTML doctype but was missed in previous check`);
+
+      // Extract HTML content using regex
+      const htmlMatch = contentStr.match(/<!DOCTYPE html>[\s\S]*<\/html>/i);
+      if (htmlMatch) {
+        const htmlContent = htmlMatch[0];
+        console.log(`[DEBUG] Successfully extracted HTML from message ${index}, length:`, htmlContent.length);
+
+        // Get content before and after HTML
+        const parts = contentStr.split(/<!DOCTYPE html>[\s\S]*<\/html>/i);
+        const nonHtmlContent = parts.filter(Boolean).join('\n\n');
+
+        return (
+          <div>
+            {nonHtmlContent && <MarkdownRenderer content={nonHtmlContent} />}
+            {renderHtmlBlock(htmlContent)}
+          </div>
+        );
+      }
+    }
+
+    // Check for embedded artifact references without artifactId set
+    if (message.role === "assistant" &&
+      (message.content.includes("[Artifact generated]") ||
+        message.content.includes("[Artifact generated - view in") ||
+        message.content.includes("[Artifact ID:"))) {
+      console.log(`[DEBUG] Message ${index} contains artifact reference but no artifactId`);
+      // Regular message with artifact mention but no artifactId - just render as markdown
+      return <MarkdownRenderer content={message.content} />
+    }
+
+    console.log(`[DEBUG] Message ${index} rendering as regular markdown`);
+    // Regular message content
     return <MarkdownRenderer content={message.content} />
   }
 

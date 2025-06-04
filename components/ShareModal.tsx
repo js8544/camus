@@ -2,21 +2,22 @@
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Copy, Mail, Share2, X } from "lucide-react"
+import { Check, Copy, Facebook, Link, Mail, Share2, Twitter } from "lucide-react"
 import { useState } from "react"
 
 interface ShareModalProps {
   isOpen: boolean
   onClose: () => void
-  onShare: (platform: string) => void
+  shareUrl: string
+  title?: string
 }
 
-export function ShareModal({ isOpen, onClose, onShare }: ShareModalProps) {
+export function ShareModal({ isOpen, onClose, shareUrl, title = "CAMUS" }: ShareModalProps) {
   const [copied, setCopied] = useState(false)
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href)
+      await navigator.clipboard.writeText(shareUrl)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (error) {
@@ -24,16 +25,47 @@ export function ShareModal({ isOpen, onClose, onShare }: ShareModalProps) {
     }
   }
 
-  const shareOptions = [
+  const shareToSocialMedia = (platform: string) => {
+    const encodedUrl = encodeURIComponent(shareUrl)
+    const encodedTitle = encodeURIComponent(title)
+
+    let sharingUrl = '';
+
+    switch (platform) {
+      case 'twitter':
+        sharingUrl = `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`;
+        break;
+      case 'facebook':
+        sharingUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+        break;
+      case 'linkedin':
+        sharingUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+        break;
+      case 'reddit':
+        sharingUrl = `https://www.reddit.com/submit?url=${encodedUrl}&title=${encodedTitle}`;
+        break;
+      case 'email':
+        sharingUrl = `mailto:?subject=${encodedTitle}&body=${encodedUrl}`;
+        break;
+    }
+
+    if (sharingUrl) {
+      window.open(sharingUrl, '_blank', 'noopener,noreferrer');
+    }
+  }
+
+  const socialButtons = [
     {
       name: 'Twitter',
       platform: 'twitter',
-      icon: (
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-        </svg>
-      ),
-      color: 'hover:bg-black hover:text-white',
+      icon: <Twitter className="h-5 w-5" />,
+      color: 'hover:bg-[#1DA1F2] hover:text-white',
+    },
+    {
+      name: 'Facebook',
+      platform: 'facebook',
+      icon: <Facebook className="h-5 w-5" />,
+      color: 'hover:bg-[#4267B2] hover:text-white',
     },
     {
       name: 'LinkedIn',
@@ -56,86 +88,82 @@ export function ShareModal({ isOpen, onClose, onShare }: ShareModalProps) {
       color: 'hover:bg-[#ff4500] hover:text-white',
     },
     {
-      name: 'Hacker News',
-      platform: 'hackernews',
-      icon: (
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M0 24V0h24v24H0zM6.951 5.896l4.112 7.708v5.064h1.583v-4.972l4.148-7.799h-1.749l-2.457 4.875c-.372.745-.688 1.434-.688 1.434s-.297-.708-.651-1.434L8.831 5.896h-1.88z" />
-        </svg>
-      ),
-      color: 'hover:bg-[#ff6600] hover:text-white',
+      name: 'Email',
+      platform: 'email',
+      icon: <Mail className="h-5 w-5" />,
+      color: 'hover:bg-gray-700 hover:text-white',
     },
   ]
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span className="flex items-center">
-              <Share2 className="mr-2 h-5 w-5" />
-              Share Whitepaper
-            </span>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
+      <DialogContent className="max-w-sm sm:max-w-md w-[90vw] bg-white border border-gray-200 shadow-lg p-4 overflow-hidden">
+        <DialogHeader className="pb-2 mb-2 border-b border-gray-100">
+          <DialogTitle className="flex items-center text-lg">
+            <Share2 className="mr-2 h-4 w-4" />
+            Share
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-hidden">
           {/* Copy Link */}
-          <div className="rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
+          <div className="rounded-lg border border-gray-200 p-3 bg-white">
+            <div className="flex items-center justify-between mb-2">
               <div>
-                <h4 className="font-medium text-gray-900">Copy Link</h4>
-                <p className="text-sm text-gray-500">Share via direct link</p>
+                <h4 className="font-medium text-gray-900 text-sm">Share Link</h4>
+                <p className="text-xs text-gray-500">Copy or share directly</p>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleCopyLink}
-                className={copied ? "bg-green-50 border-green-200 text-green-700" : ""}
+                className={copied ? "bg-green-50 border-green-200 text-green-700 h-8 px-2" : "h-8 px-2"}
               >
-                <Copy className="mr-2 h-4 w-4" />
-                {copied ? "Copied!" : "Copy"}
+                {copied ? (
+                  <>
+                    <Check className="mr-1 h-3 w-3" />
+                    <span className="text-xs">Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="mr-1 h-3 w-3" />
+                    <span className="text-xs">Copy</span>
+                  </>
+                )}
+              </Button>
+            </div>
+            <div className="p-2 bg-gray-50 rounded flex items-center border border-gray-100 overflow-hidden text-ellipsis">
+              <div className="flex-1 overflow-hidden">
+                <p className="text-xs text-gray-700 font-mono truncate">
+                  {shareUrl}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCopyLink}
+                className="ml-1 p-1 h-6 w-6 flex-shrink-0"
+              >
+                <Link className="h-3 w-3" />
               </Button>
             </div>
           </div>
 
           {/* Social Platforms */}
-          <div className="rounded-lg border border-gray-200 p-4">
-            <h4 className="mb-3 font-medium text-gray-900">Share on Social Media</h4>
-            <div className="grid grid-cols-2 gap-3">
-              {shareOptions.map((option) => (
+          <div>
+            <h4 className="mb-2 font-medium text-gray-900 text-sm">Share on Social Media</h4>
+            <div className="grid grid-cols-5 gap-1">
+              {socialButtons.map((option) => (
                 <Button
                   key={option.platform}
                   variant="outline"
-                  onClick={() => onShare(option.platform)}
-                  className={`flex items-center justify-start p-3 transition-colors ${option.color}`}
+                  onClick={() => shareToSocialMedia(option.platform)}
+                  className={`flex flex-col items-center justify-center p-2 h-auto transition-colors border border-gray-200 ${option.color}`}
                 >
-                  {option.icon}
-                  <span className="ml-2">{option.name}</span>
+                  <div className="mb-1">{option.icon}</div>
+                  <span className="text-[10px]">{option.name}</span>
                 </Button>
               ))}
-            </div>
-          </div>
-
-          {/* Email */}
-          <div className="rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium text-gray-900">Email</h4>
-                <p className="text-sm text-gray-500">Send via email</p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onShare('email')}
-                className="hover:bg-gray-100"
-              >
-                <Mail className="mr-2 h-4 w-4" />
-                Send
-              </Button>
             </div>
           </div>
         </div>

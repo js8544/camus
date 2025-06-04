@@ -8,6 +8,7 @@ import { ChatSidebar } from "@/components/agent/chat-sidebar"
 import { FullscreenModal } from "@/components/agent/fullscreen-modal"
 import { ResultsPanel } from "@/components/agent/results-panel"
 import { AuthGuard } from "@/components/auth-guard"
+import { ShareModal } from "@/components/ShareModal"
 import { Button } from "@/components/ui/button"
 import { useAgentChat } from "@/hooks/use-agent-chat"
 import { Share2 } from "lucide-react"
@@ -24,6 +25,8 @@ function AgentPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const shouldUpdateUrl = useRef(false)
+  const [shareConversationUrl, setShareConversationUrl] = useState<string | null>(null)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
 
   // Track current streaming message state for abort handling
   const currentStreamingMessageRef = useRef<{
@@ -726,11 +729,9 @@ function AgentPageContent() {
       const data = await response.json()
       const shareUrl = `${window.location.origin}${data.url}`
 
-      // Copy to clipboard
-      await navigator.clipboard.writeText(shareUrl)
-
-      // Show success message (you could replace this with a toast notification)
-      alert(`Share link copied to clipboard!\n\n${shareUrl}`)
+      // Set the share URL and open the modal
+      setShareConversationUrl(shareUrl)
+      setIsShareModalOpen(true)
     } catch (err) {
       console.error('Error sharing conversation:', err)
       alert('Failed to create share link')
@@ -800,6 +801,16 @@ function AgentPageContent() {
 
   return (
     <div className="h-screen overflow-hidden bg-beige text-gray-700 font-sans">
+      {/* Share Modal */}
+      {shareConversationUrl && (
+        <ShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          shareUrl={shareConversationUrl}
+          title="CAMUS Conversation"
+        />
+      )}
+
       <div className="flex h-screen">
         {/* Left Half: Sidebar + Chat */}
         <div className="flex w-1/2 h-full min-w-0">

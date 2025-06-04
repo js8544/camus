@@ -34,10 +34,22 @@ export const ChatMessages = forwardRef<HTMLDivElement, ChatMessagesProps>(
     isSharedMode = false
   }, ref) => {
     const renderArtifactBlock = (artifactId: string): JSX.Element => {
-      const artifact = artifacts.find(a => a.id === artifactId)
+      // Find the artifact by ID - try exact match first
+      let artifact = artifacts.find(a => a.id === artifactId);
+
+      // If not found, try to find by partial match (for shared artifacts where IDs might be truncated)
+      if (!artifact && artifactId) {
+        artifact = artifacts.find(a => a.id.includes(artifactId) || artifactId.includes(a.id));
+      }
+
+      // If still not found, use the first artifact as fallback in shared mode
+      if (!artifact && isSharedMode && artifacts.length > 0) {
+        console.warn("Artifact not found by ID, using fallback in shared mode");
+        artifact = artifacts[0];
+      }
 
       // Check if this artifact is currently streaming
-      const isStreamingThis = streamingArtifact?.id === artifactId
+      const isStreamingThis = streamingArtifact?.id === artifactId;
 
       return (
         <ArtifactBlock
@@ -74,6 +86,9 @@ export const ChatMessages = forwardRef<HTMLDivElement, ChatMessagesProps>(
               onRetry={onRetry}
               renderArtifactBlock={renderArtifactBlock}
               isSharedMode={isSharedMode}
+              setCurrentDisplayResult={setCurrentDisplayResult}
+              setGeneratedHtml={setGeneratedHtml}
+              setIsFullscreen={() => { }}
             />
           ))
         )}

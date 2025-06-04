@@ -3,6 +3,7 @@
 import { ChatMessages } from "@/components/agent/chat-messages"
 import { FullscreenModal } from "@/components/agent/fullscreen-modal"
 import { ResultsPanel } from "@/components/agent/results-panel"
+import { ShareModal } from "@/components/ShareModal"
 import { Button } from "@/components/ui/button"
 import { useAgentChat } from "@/hooks/use-agent-chat"
 import { ExternalLink, Share2, Sparkles } from "lucide-react"
@@ -27,6 +28,7 @@ export default function SharedConversationPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
 
   // Use the same agent chat hook for managing display state
   const {
@@ -67,8 +69,160 @@ export default function SharedConversationPage() {
         const data = await response.json()
         setConversation(data)
 
-        // Set the conversation data to the chat hook
-        setMessages(data.messages || [])
+        console.log("[DEBUG] Fetched shared conversation data:", {
+          messagesCount: data.messages.length,
+          artifactsCount: data.artifacts.length,
+          artifactIds: data.artifacts.map((a: any) => a.id)
+        });
+
+        // For debugging: Check all messages for HTML content
+        const htmlMessages = data.messages.filter((m: any) =>
+          m.role === "assistant" &&
+          (m.content.includes("<!DOCTYPE html>") ||
+            m.content.includes("<html") ||
+            m.content.includes("</html>"))
+        );
+
+        console.log("[DEBUG] Found HTML content in messages:", {
+          count: htmlMessages.length,
+          messageIds: htmlMessages.map((m: any) => m.id)
+        });
+
+        // Check all artifacts for HTML content
+        const htmlArtifacts = data.artifacts.filter((a: any) =>
+          a.content &&
+          (a.content.includes("<!DOCTYPE html>") ||
+            a.content.includes("<html") ||
+            a.content.includes("</html>"))
+        );
+
+        console.log("[DEBUG] Found HTML content in artifacts:", {
+          count: htmlArtifacts.length,
+          artifactIds: htmlArtifacts.map((a: any) => a.id)
+        });
+
+        // Process messages to associate artifacts with messages that contain artifact references
+        const processedMessages = data.messages.map((message: any) => {
+          // First check for ```artifact blocks
+          if (message.role === "assistant" && message.content.includes("```artifact")) {
+            console.log("[DEBUG] Found ```artifact block in message:", message.id);
+
+            // Extract the artifact content
+            const artifactMatch = message.content.match(/```artifact\n([\s\S]*?)\n```/);
+            if (artifactMatch) {
+              const artifactContent = artifactMatch[1];
+
+              // Find the matching artifact by content similarity
+              const matchingArtifact = data.artifacts.find((a: any) => {
+                // Simple content similarity check (could be improved)
+                return a.content &&
+                  Math.abs(a.content.length - artifactContent.length) < 100 &&
+                  (a.content.includes(artifactContent.substring(0, 50)) ||
+                    artifactContent.includes(a.content.substring(0, 50)));
+              });
+
+              if (matchingArtifact) {
+                console.log("[DEBUG] Associated artifact block with artifact:", {
+                  messageId: message.id,
+                  artifactId: matchingArtifact.id
+                });
+
+                // Replace the artifact block with a placeholder
+                const updatedContent = message.content.replace(
+                  /```artifact\n[\s\S]*?\n```/g,
+                  '[Artifact generated - view in right panel]'
+                );
+
+                return {
+                  ...message,
+                  content: updatedContent,
+                  artifactId: matchingArtifact.id
+                };
+              }
+            }
+          }
+
+          // Check if message contains artifact reference text
+          if (message.role === "assistant" && message.content.includes("[Artifact generated")) {
+            // Find matching artifact for this message (if any)
+            const matchingArtifact = data.artifacts.find((a: any) =>
+              message.content.includes(a.id) ||
+              (message.createdAt && a.timestamp &&
+                Math.abs(new Date(message.createdAt).getTime() - a.timestamp) < 60000)
+            );
+
+            if (matchingArtifact) {
+              console.log("[DEBUG] Associated message with artifact:", {
+                messageId: message.id,
+                artifactId: matchingArtifact.id,
+                timeDiff: message.createdAt && matchingArtifact.timestamp ?
+                  Math.abs(new Date(message.createdAt).getTime() - matchingArtifact.timestamp) : 'N/A'
+              });
+
+              return {
+                ...message,
+                artifactId: matchingArtifact.id
+              };
+            }
+          }
+
+          // Check for HTML content that should be rendered as an artifact
+          if (message.role === "assistant" &&
+            (message.content.includes("<!DOCTYPE html>") ||
+              message.content.includes("<html") ||
+              message.content.includes("<head")) &&
+            message.content.includes("</html>")) {
+
+            // Extract HTML content for comparison
+            const htmlMatch = message.content.match(/<!DOCTYPE html>[\s\S]*<\/html>/i);
+            const htmlContent = htmlMatch ? htmlMatch[0] : message.content;
+
+            // Find matching artifact by comparing HTML content
+            const matchingArtifact = data.artifacts.find((a: any) => {
+              // Compare content length as a quick check
+              if (Math.abs(a.content.length - htmlContent.length) > 100) {
+                return false;
+              }
+
+              // Check for key HTML fragments
+              return a.content.includes("<!DOCTYPE html>") ||
+                a.content.includes("<html") ||
+                a.content.includes("<head");
+            });
+
+            if (matchingArtifact) {
+              console.log("[DEBUG] Associated HTML message with artifact:", {
+                messageId: message.id,
+                artifactId: matchingArtifact.id,
+                messageContentLength: message.content.length,
+                artifactContentLength: matchingArtifact.content.length
+              });
+
+              return {
+                ...message,
+                artifactId: matchingArtifact.id
+              };
+            } else {
+              console.log("[DEBUG] Found HTML message but no matching artifact:", {
+                messageId: message.id,
+                contentPreview: message.content.substring(0, 100) + "..."
+              });
+            }
+          }
+
+          return message;
+        });
+
+        // Debug the processed messages
+        console.log("[DEBUG] Processed messages with artifactIds:",
+          processedMessages.filter((m: any) => m.artifactId).map((m: any) => ({
+            messageId: m.id,
+            artifactId: m.artifactId
+          }))
+        );
+
+        // Set the processed messages to the chat hook
+        setMessages(processedMessages || [])
         setArtifacts(data.artifacts || [])
         setToolResults(data.toolResults || [])
 
@@ -77,9 +231,11 @@ export default function SharedConversationPage() {
           const lastArtifact = data.artifacts[data.artifacts.length - 1]
           setCurrentDisplayResult(lastArtifact)
           setGeneratedHtml(lastArtifact.content)
+          console.log("[DEBUG] Set current display result to last artifact:", lastArtifact.id);
         } else if (data.toolResults && data.toolResults.length > 0) {
           const lastToolResult = data.toolResults[data.toolResults.length - 1]
           setCurrentDisplayResult(lastToolResult)
+          console.log("[DEBUG] Set current display result to last tool result");
         }
 
       } catch (err) {
@@ -129,6 +285,10 @@ export default function SharedConversationPage() {
     }
   }
 
+  const handleShare = () => {
+    setIsShareModalOpen(true)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-beige flex items-center justify-center">
@@ -166,6 +326,16 @@ export default function SharedConversationPage() {
 
   return (
     <div className="h-screen overflow-hidden bg-beige text-gray-700 font-sans">
+      {/* Share Modal */}
+      {conversation && (
+        <ShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          shareUrl={window.location.href}
+          title={conversation.title || "CAMUS Conversation"}
+        />
+      )}
+
       {/* Header */}
       <div className="bg-white border-b border-gray-300">
         <div className="w-full px-4 sm:px-6 lg:px-8">
@@ -189,13 +359,13 @@ export default function SharedConversationPage() {
                 Shared on {formatDate(conversation.createdAt)} • {conversation.views} views
               </span>
               <Button
-                onClick={handleCopyLink}
+                onClick={handleShare}
                 variant="outline"
                 size="sm"
                 className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
               >
                 <Share2 className="w-4 h-4 mr-2" />
-                Copy Link
+                Share
               </Button>
               <Button
                 onClick={() => window.location.href = '/agent'}

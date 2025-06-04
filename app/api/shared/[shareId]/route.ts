@@ -19,10 +19,36 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Increment view count
     await ConversationService.incrementArtifactViews(artifact.id)
 
+    // Ensure HTML content is properly formatted for rendering
+    let content = artifact.content;
+    if (content &&
+      (content.includes("<!DOCTYPE html>") ||
+        content.includes("<html") ||
+        content.includes("<head")) &&
+      content.includes("</html>")) {
+      // This is already HTML content, no need to modify
+    } else {
+      // Potentially wrap in HTML if it's not already HTML
+      if (!content.trim().startsWith("<!DOCTYPE") && !content.trim().startsWith("<html")) {
+        // Simple text content, wrap it in minimal HTML
+        content = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${artifact.name}</title>
+</head>
+<body>
+  ${content}
+</body>
+</html>`;
+      }
+    }
+
     return Response.json({
       id: artifact.id,
       name: artifact.name,
-      content: artifact.content,
+      content: content,
       createdAt: artifact.createdAt,
       slug: artifact.slug
     })

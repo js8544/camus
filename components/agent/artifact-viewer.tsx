@@ -1,7 +1,8 @@
 "use client"
 
+import { ShareModal } from "@/components/ShareModal"
 import { Button } from "@/components/ui/button"
-import { Check, Code, Copy, Download, Eye, Maximize2, Share2, Sparkles } from "lucide-react"
+import { Check, Code, Download, Eye, Maximize2, Share2, Sparkles } from "lucide-react"
 import { useState } from "react"
 
 export type ArtifactItem = {
@@ -33,6 +34,7 @@ export function ArtifactViewer({
   const [isSharing, setIsSharing] = useState(false)
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [showShareSuccess, setShowShareSuccess] = useState(false)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
 
   const formatTimestamp = (timestamp: number): string => {
     return new Date(timestamp).toLocaleTimeString()
@@ -68,12 +70,10 @@ export function ArtifactViewer({
 
       const data = await response.json()
       setShareUrl(data.shareUrl)
+      setIsShareModalOpen(true)
 
-      // Copy to clipboard
-      await navigator.clipboard.writeText(data.shareUrl)
+      // Show success indicator
       setShowShareSuccess(true)
-
-      // Hide success message after 2 seconds
       setTimeout(() => {
         setShowShareSuccess(false)
       }, 2000)
@@ -183,28 +183,14 @@ export function ArtifactViewer({
           </div>
         </div>
 
-        {/* Share URL Display - only show when not in shared mode */}
-        {shareUrl && !isSharedMode && (
-          <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-md">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-green-600 font-medium mb-1">Shareable link created:</p>
-                <div className="flex items-center space-x-2">
-                  <code className="text-xs text-green-700 bg-green-100 px-2 py-1 rounded font-mono truncate">
-                    {shareUrl}
-                  </code>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={copyShareUrl}
-                    className="text-green-600 hover:text-green-700 hover:bg-green-100 p-1 h-auto"
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Share Modal */}
+        {shareUrl && (
+          <ShareModal
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            shareUrl={shareUrl}
+            title={`CAMUS Artifact: ${artifact.name}`}
+          />
         )}
       </div>
 
@@ -271,7 +257,23 @@ export function ArtifactBlock({
 
   // If no artifact found and not streaming, show not found
   if (!artifact) {
-    return <span className="text-gray-500">Artifact not found</span>
+    return (
+      <div className="my-3 p-4 bg-gradient-to-r from-beige to-gray-50 border border-gray-300 rounded-lg">
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+            <Sparkles className="h-6 w-6 text-gray-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-gray-600 font-medium">
+              Artifact not available
+            </h3>
+            <p className="text-gray-500 text-sm">
+              This artifact may have been removed or is not accessible
+            </p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // Normal artifact display

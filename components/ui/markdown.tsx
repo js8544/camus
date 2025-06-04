@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
@@ -7,6 +8,51 @@ interface MarkdownRendererProps {
 }
 
 export function MarkdownRenderer({ content, className }: MarkdownRendererProps) {
+  const [processedContent, setProcessedContent] = useState(content);
+
+  // Process the content to handle HTML and special blocks
+  useEffect(() => {
+    if (!content) {
+      setProcessedContent('');
+      return;
+    }
+
+    console.log("[DEBUG] MarkdownRenderer processing content of length:", content?.length);
+
+    let updatedContent = content;
+
+    // Clean artifact blocks - these should be handled by the parent component
+    if (updatedContent.includes("```artifact")) {
+      console.log("[DEBUG] MarkdownRenderer removing artifact blocks");
+      updatedContent = updatedContent.replace(/```artifact\n[\s\S]*?\n```/g, '');
+    }
+
+    // Check if content contains HTML
+    if (updatedContent && (
+      updatedContent.includes("<!DOCTYPE html>") ||
+      updatedContent.includes("<html") ||
+      (updatedContent.includes("<head") && updatedContent.includes("</html>"))
+    )) {
+      console.log("[DEBUG] MarkdownRenderer detected HTML content, extracting...");
+
+      // Try to extract just HTML comments and text outside the HTML tags
+      const beforeHtml = updatedContent.split(/<!DOCTYPE html>|<html/i)[0].trim();
+      const afterHtml = updatedContent.split(/<\/html>/i)[1] || '';
+
+      // Combine text before and after HTML
+      const nonHtmlContent = [beforeHtml, afterHtml].filter(Boolean).join('\n\n');
+
+      if (nonHtmlContent) {
+        console.log("[DEBUG] MarkdownRenderer extracted non-HTML content:", nonHtmlContent.substring(0, 100));
+        setProcessedContent(nonHtmlContent || 'HTML content detected. Please view in iframe.');
+      } else {
+        setProcessedContent('HTML content detected. Please view in iframe.');
+      }
+    } else {
+      setProcessedContent(updatedContent);
+    }
+  }, [content]);
+
   // No need to process artifact blocks here since they're handled at the message level
   return (
     <ReactMarkdown
@@ -114,7 +160,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
         ),
       }}
     >
-      {content}
+      {processedContent}
     </ReactMarkdown>
   )
 } 

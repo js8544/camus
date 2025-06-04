@@ -1,7 +1,8 @@
 "use client"
 
+import { ShareModal } from "@/components/ShareModal"
 import { Button } from "@/components/ui/button"
-import { Code, Download, ExternalLink, Eye, Sparkles } from "lucide-react"
+import { Code, Download, ExternalLink, Eye, Share2, Sparkles } from "lucide-react"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -20,6 +21,7 @@ export default function SharedArtifactPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'view' | 'code'>('view')
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
 
   useEffect(() => {
     async function fetchSharedArtifact() {
@@ -74,6 +76,10 @@ export default function SharedArtifactPage() {
     })
   }
 
+  const handleShare = () => {
+    setIsShareModalOpen(true)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-beige flex items-center justify-center">
@@ -111,6 +117,16 @@ export default function SharedArtifactPage() {
 
   return (
     <div className="min-h-screen bg-beige">
+      {/* Share Modal */}
+      {artifact && (
+        <ShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          shareUrl={window.location.href}
+          title={`CAMUS Artifact: ${artifact.name}`}
+        />
+      )}
+
       {/* Header */}
       <div className="bg-white border-b border-gray-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -124,15 +140,26 @@ export default function SharedArtifactPage() {
                 <span className="text-xs text-gray-500">Shared Artifact</span>
               </div>
             </div>
-            <Button
-              onClick={() => window.location.href = '/'}
-              variant="outline"
-              size="sm"
-              className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Open CAMUS
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button
+                onClick={handleShare}
+                variant="outline"
+                size="sm"
+                className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                Share
+              </Button>
+              <Button
+                onClick={() => window.location.href = '/'}
+                variant="outline"
+                size="sm"
+                className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Open CAMUS
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -180,15 +207,26 @@ export default function SharedArtifactPage() {
                 </Button>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownload}
-                className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
-              >
-                <Download className="h-3 w-3 mr-2" />
-                Download
-              </Button>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleShare}
+                  className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                >
+                  <Share2 className="h-3 w-3 mr-2" />
+                  Share
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownload}
+                  className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                >
+                  <Download className="h-3 w-3 mr-2" />
+                  Download
+                </Button>
+              </div>
             </div>
           </div>
 

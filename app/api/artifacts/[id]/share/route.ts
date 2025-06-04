@@ -53,7 +53,7 @@ export async function POST(
       ? process.env.NEXTAUTH_URL || `https://${request.headers.get('host')}`
       : `http://${request.headers.get('host')}`
 
-    const shareUrl = `${baseUrl}/shared/message/${messageId}`
+    const shareUrl = `${baseUrl}/shared/artifact/${messageId}`
 
     console.log("✅ Share API: Successfully created share link", {
       messageId,
