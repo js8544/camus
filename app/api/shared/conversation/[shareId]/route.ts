@@ -1,4 +1,5 @@
 import { ConversationService } from "@/lib/db/conversation-service"
+import { CreditService } from "@/lib/db/credit-service"
 import { prisma } from "@/lib/prisma"
 import { NextRequest, NextResponse } from "next/server"
 
@@ -17,7 +18,7 @@ export async function GET(
     }
 
     // Find the shared conversation by slug
-    const sharedConversation = await prisma.conversation.findUnique({
+    const sharedConversation = await prisma.conversation.findFirst({
       where: {
         shareSlug: shareId,
         isPublic: true // Only return public shared conversations
@@ -37,14 +38,27 @@ export async function GET(
     )
 
     // Increment view count
-    await prisma.conversation.update({
+    const updatedConversation = await prisma.conversation.update({
       where: { id: sharedConversation.id },
       data: {
         views: {
           increment: 1
         }
+      },
+      select: {
+        views: true
       }
     })
+
+    // Check for view milestone and award credits if user exists
+    if (sharedConversation.userId) {
+      await CreditService.processViewMilestone(
+        sharedConversation.userId,
+        'conversation',
+        sharedConversation.id,
+        updatedConversation.views
+      )
+    }
 
     return NextResponse.json({
       id: sharedConversation.id,
@@ -54,7 +68,7 @@ export async function GET(
       artifacts: conversationData.artifacts,
       toolResults: conversationData.toolResults,
       createdAt: sharedConversation.createdAt.toISOString(),
-      views: sharedConversation.views + 1
+      views: updatedConversation.views
     })
 
   } catch (error) {

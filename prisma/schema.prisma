@@ -14,15 +14,17 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String?   @unique
-  emailVerified DateTime?
-  password      String? // For credentials-based authentication
-  name          String?
-  avatar        String?
-  image         String? // NextAuth.js compatibility
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  email           String?   @unique
+  emailVerified   DateTime?
+  password        String? // For credentials-based authentication
+  name            String?
+  avatar          String?
+  image           String? // NextAuth.js compatibility
+  credits         Int       @default(20)
+  lastCreditReset DateTime? // Tracks when credits were last reset
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // Relations
   conversations Conversation[]

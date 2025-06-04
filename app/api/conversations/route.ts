@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { title, sessionId, message } = body
 
-    // Create new conversation with the provided title
+    // Create new conversation with the provided title - no credit deduction at this stage
     const conversation = await ConversationService.createConversation(
       session?.user?.id,
       sessionId,

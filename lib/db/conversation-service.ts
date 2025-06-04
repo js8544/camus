@@ -833,14 +833,33 @@ export class ConversationService {
   // Increment artifact view count
   static async incrementArtifactViews(artifactId: string) {
     try {
-      await prisma.artifact.update({
+      // Increment view count using Prisma
+      const artifact = await prisma.artifact.update({
         where: { id: artifactId },
         data: {
           views: {
             increment: 1
           }
+        },
+        select: {
+          id: true,
+          views: true,
+          userId: true
         }
-      })
+      });
+
+      // Check if we reached a view milestone and award bonus credits
+      if (artifact && artifact.userId) {
+        const { CreditService } = await import('./credit-service');
+        await CreditService.processViewMilestone(
+          artifact.userId,
+          'artifact',
+          artifactId,
+          artifact.views
+        );
+      }
+
+      return artifact;
     } catch (error) {
       console.error("Error incrementing artifact views:", error)
       // Don't throw - this shouldn't break the user experience

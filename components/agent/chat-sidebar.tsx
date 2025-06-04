@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { UserCreditsDisplay } from "@/components/user/UserCreditsDisplay"
 import { Loader2, LogOut, MessageSquare, Plus, Search, User } from "lucide-react"
 import { signOut, useSession } from "next-auth/react"
 import { useEffect, useState } from "react"
@@ -305,6 +306,13 @@ export function ChatSidebar({ onNewChat, onLoadConversation, currentConversation
         {/* User Dropdown Menu */}
         {showUserDropdown && (
           <div className="absolute bottom-full left-4 right-4 mb-2 rounded-lg border border-gray-300 bg-white py-1 shadow-lg z-50">
+            {session?.user && (
+              <>
+                <div className="px-3 py-2 border-b border-gray-100">
+                  <UserCreditsDisplay />
+                </div>
+              </>
+            )}
             <button
               onClick={() => {
                 signOut()

@@ -10,6 +10,7 @@ import { ResultsPanel } from "@/components/agent/results-panel"
 import { AuthGuard } from "@/components/auth-guard"
 import { ShareModal } from "@/components/ShareModal"
 import { Button } from "@/components/ui/button"
+import { CreditMilestoneNotification } from "@/components/user/CreditMilestoneNotification"
 import { useAgentChat } from "@/hooks/use-agent-chat"
 import { Share2 } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -229,6 +230,21 @@ function AgentPageContent() {
         }),
       })
 
+      // Check for credit error (403)
+      if (response.status === 403) {
+        const errorData = await response.json();
+        console.error("❌ Credit error:", errorData.error);
+
+        // Add error message to the chat
+        addMessage({
+          role: "assistant",
+          content: "Not enough credits to start a new conversation. You'll get 5 more credits tomorrow, or earn more when your shared content reaches 100 views!",
+          isError: true
+        });
+
+        return; // Stop execution here
+      }
+
       if (!response.ok) {
         throw new Error('Failed to create new conversation')
       }
@@ -364,6 +380,25 @@ function AgentPageContent() {
       })
 
       console.log("📡 Frontend: Response received", { status: response.status, ok: response.ok })
+
+      // Check for credit error (403)
+      if (response.status === 403) {
+        // Remove thinking message
+        setMessages(prev => prev.filter(msg => msg.role !== "thinking"))
+
+        const errorData = await response.json();
+        console.error("❌ Credit error:", errorData.error);
+
+        // Add error message to the chat
+        addMessage({
+          role: "assistant",
+          content: "Not enough credits to start a new conversation. You'll get 5 more credits tomorrow, or earn more when your shared content reaches 100 views!",
+          isError: true
+        });
+
+        setIsLoading(false);
+        return; // Stop execution here
+      }
 
       // Check for conversation ID in response headers
       const responseConversationId = response.headers.get('x-conversation-id')
@@ -810,6 +845,9 @@ function AgentPageContent() {
           title="CAMUS Conversation"
         />
       )}
+
+      {/* Credit milestone notification */}
+      <CreditMilestoneNotification />
 
       <div className="flex h-screen">
         {/* Left Half: Sidebar + Chat */}

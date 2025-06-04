@@ -1,6 +1,7 @@
 import { enhancedTools } from "@/lib/ai"
 import { authOptions } from "@/lib/auth"
 import { ConversationService } from "@/lib/db/conversation-service"
+import { CreditService } from "@/lib/db/credit-service"
 import { createOpenAI } from "@ai-sdk/openai"
 import { streamText } from "ai"
 import { AISDKExporter } from "langsmith/vercel"
@@ -354,6 +355,24 @@ export async function POST(request: NextRequest) {
       } catch (dbError) {
         console.warn("⚠️ API Route: Failed to create conversation, continuing without DB sync", dbError)
       }
+    }
+
+    // Check for credits before processing the message - only deducted on first message
+    if (session?.user?.id && (!conversationHistory || conversationHistory.length === 0)) {
+      // Only check credits for the first message in a conversation
+      const hasCredits = await CreditService.hasEnoughCredits(session.user.id)
+      if (!hasCredits) {
+        return new Response(JSON.stringify({
+          error: 'Not enough credits to start a new conversation'
+        }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      }
+
+      // Use a credit - only deducted once when sending the first message
+      await CreditService.useCredit(session.user.id)
+      console.log("💳 API Route: Used a credit from user", { userId: session.user.id })
     }
 
     // Save user message with frontend-provided ID for consistency

@@ -1,4 +1,5 @@
 import { Providers } from "@/components/providers"
+import { Toaster } from "@/components/ui/toaster"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import type React from "react"
@@ -40,6 +41,7 @@ export default function RootLayout({
         <Providers>
           {/* <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange> */}
           {children}
+          <Toaster />
           {/* </ThemeProvider> */}
         </Providers>
       </body>
