@@ -7,6 +7,11 @@
 
 Camus is a revolutionary AI agent designed to disrupt conventional AI narratives through the art of beautiful uselessness. It creates digital experiences that challenge our obsession with "productivity" and "efficiency" in AI.
 
+## 🌐 Links
+
+- **🎭 Live Experience**: [camus.im](https://www.camus.im/) - Try CAMUS directly
+- **📄 Official Whitepaper**: [Read the full research paper](https://www.camus.im/whitepaper) - Deep dive into engineered uselessness
+
 ## 🎭 Philosophy
 
 Camus serves as a satirical mirror reflecting the AI industry's tendency toward:
@@ -131,61 +136,4 @@ The frontend automatically detects these `artifact` code blocks and renders the 
 ## 🧪 Development
 
 ### Running Locally
-```bash
-pnpm dev          # Start development server
-pnpm build        # Build for production
-pnpm start        # Run production build
-pnpm lint         # Run ESLint
-pnpm test         # Run tests
 ```
-
-### Database Commands
-```bash
-pnpm db:generate  # Generate Prisma client
-pnpm db:push      # Push schema changes
-pnpm db:studio    # Open Prisma Studio
-```
-
-### Project Structure
-```
-camus/
-├── app/
-│   ├── agent/           # Main Camus chat interface
-│   ├── api/             # API routes (agent, conversations, etc.)
-│   ├── auth/            # Authentication pages
-│   └── page.tsx         # Landing page
-├── components/
-│   ├── agent/           # Agent-specific components
-│   ├── shared/          # Shared components
-│   └── ui/              # Shadcn/ui components
-├── lib/
-│   ├── db/              # Database services
-│   ├── ai.ts            # Core AI functionality
-│   └── auth.ts          # Authentication configuration
-├── hooks/               # Custom React hooks
-├── prisma/              # Database schema and migrations
-└── types/               # TypeScript type definitions
-```
-
-## 🤝 Contributing
-
-Camus welcomes contributions that enhance its commitment to beautiful uselessness:
-
-1. **New Tools**: Add more sophisticated ways to achieve meaninglessness
-2. **Enhanced Satire**: Improve commentary on AI industry trends
-3. **Visual Polish**: Make artifacts even more stunning and pointless
-4. **Documentation**: Help others understand the art of uselessness
-
-## 📜 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🎭 About the Name
-
-**Camus** = **C**reating **A**bsurd, **M**eaningless and **U**seless **S**tuff
-
-Named after Albert Camus, the philosopher of absurdism, capturing the essence of purposeful purposelessness.
-
----
-
-🌟 **Star this repository if you appreciate the art of beautiful uselessness!**

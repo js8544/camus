@@ -1206,6 +1206,18 @@ export default function WhitepaperPage() {
               </div>
             </section>
 
+            {/* Support */}
+            <section className="mb-16 text-center">
+              <div className="rounded-sm border border-gray-300 bg-gray-50 p-4">
+                <p className="text-sm text-gray-600">
+                  <span className="text-gray-500">Enjoyed this exploration of uselessness?</span>{" "}
+                  <a href="https://coff.ee/jinshang" target="_blank" rel="noopener noreferrer" className="text-taupe hover:underline">
+                    Support the project ☕
+                  </a>
+                </p>
+              </div>
+            </section>
+
             {/* Share */}
             <div className="rounded-sm border border-gray-300 bg-white p-6 text-center">
               <h3 className="mb-4 font-serif text-xl font-medium text-gray-800">Share this groundbreaking research</h3>

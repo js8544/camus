@@ -791,6 +791,12 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="mt-12 border-t border-gray-300 pt-8 text-center text-sm text-gray-500">
+            <p className="mb-2">
+              <span className="text-gray-400">Enjoyed the absurdity?</span>{" "}
+              <a href="https://coff.ee/jinshang" target="_blank" rel="noopener noreferrer" className="text-taupe hover:underline">
+                Buy me a coffee ☕
+              </a>
+            </p>
             <p>© 2025 Camus AI. All rights meaninglessly reserved.</p>
             <p className="mt-2">A satirical project critiquing AI hype culture.</p>
           </div>
