@@ -1,17 +1,243 @@
-import { Navigation } from "@/components/nav"
+"use client"
+
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Coffee, FileBarChart, PieChart, Play } from "lucide-react"
+import * as d3 from "d3"
+import { ArrowRight, Briefcase, ChefHat, Coffee, FileBarChart, GraduationCap, MapPin, PieChart, Play, TrendingUp, Users } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { useEffect, useRef } from "react"
 
 export default function LandingPage() {
+  const chartRef = useRef<SVGSVGElement>(null)
+
+  // Uselessness data for the chart
+  const uselessnessData = [
+    { task: "Email Composition", agentA: 12, agentB: 8, agentC: 15, camus: 100 },
+    { task: "Data Analysis", agentA: 5, agentB: 7, agentC: 3, camus: 100 },
+    { task: "Code Generation", agentA: 18, agentB: 22, agentC: 14, camus: 100 },
+    { task: "Meeting Summary", agentA: 9, agentB: 11, agentC: 6, camus: 100 },
+    { task: "Creative Writing", agentA: 25, agentB: 19, agentC: 21, camus: 100 },
+    { task: "Strategic Planning", agentA: 31, agentB: 28, agentC: 35, camus: 100 }
+  ]
+
+  type DataPoint = typeof uselessnessData[0]
+  type AgentKey = 'agentA' | 'agentB' | 'agentC' | 'camus'
+
+  useEffect(() => {
+    if (!chartRef.current) return
+
+    // Clear previous chart
+    d3.select(chartRef.current).selectAll("*").remove()
+
+    const margin = { top: 40, right: 120, bottom: 80, left: 80 }
+    const width = 800 - margin.left - margin.right
+    const height = 500 - margin.top - margin.bottom
+
+    const svg = d3.select(chartRef.current)
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+
+    const g = svg.append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`)
+
+    // Define scales
+    const x0 = d3.scaleBand()
+      .domain(uselessnessData.map(d => d.task))
+      .range([0, width])
+      .padding(0.1)
+
+    const x1 = d3.scaleBand()
+      .domain(['agentA', 'agentB', 'agentC', 'camus'])
+      .range([0, x0.bandwidth()])
+      .padding(0.05)
+
+    const y = d3.scaleLinear()
+      .domain([0, 100])
+      .range([height, 0])
+
+    // Color scheme
+    const colors: Record<AgentKey, string> = {
+      agentA: '#9CA3AF',
+      agentB: '#9CA3AF',
+      agentC: '#9CA3AF',
+      camus: '#8B7355' // taupe color
+    }
+
+    // Create bars
+    const taskGroups = g.selectAll('.task-group')
+      .data(uselessnessData)
+      .enter().append('g')
+      .attr('class', 'task-group')
+      .attr('transform', (d: DataPoint) => `translate(${x0(d.task)},0)`)
+
+    // Add bars for each agent
+    const agents: AgentKey[] = ['agentA', 'agentB', 'agentC', 'camus']
+    agents.forEach((agent: AgentKey) => {
+      taskGroups.append('rect')
+        .attr('x', x1(agent) || 0)
+        .attr('y', (d: DataPoint) => y(d[agent]))
+        .attr('width', x1.bandwidth())
+        .attr('height', (d: DataPoint) => height - y(d[agent]))
+        .attr('fill', colors[agent])
+        .attr('opacity', agent === 'camus' ? 1 : 0.7)
+        .on('mouseover', function (event: MouseEvent, d: DataPoint) {
+          // Tooltip
+          const tooltip = d3.select('body').append('div')
+            .attr('class', 'tooltip')
+            .style('position', 'absolute')
+            .style('background', 'rgba(0,0,0,0.8)')
+            .style('color', 'white')
+            .style('padding', '8px')
+            .style('border-radius', '4px')
+            .style('font-size', '12px')
+            .style('pointer-events', 'none')
+            .style('opacity', 0)
+
+          tooltip.transition().duration(200).style('opacity', 1)
+          tooltip.html(`
+            <strong>${d.task}</strong><br/>
+            ${agent === 'camus' ? 'CAMUS' : agent.charAt(0).toUpperCase() + agent.slice(1)}: ${d[agent]}% useless<br/>
+            <em>${agent === 'camus' ? '(engineered)' : '(accidental)'}</em>
+          `)
+            .style('left', (event.pageX + 10) + 'px')
+            .style('top', (event.pageY - 10) + 'px')
+
+          // Highlight bar
+          d3.select(this as SVGRectElement).attr('opacity', agent === 'camus' ? 1 : 0.7)
+        })
+        .on('mouseout', function () {
+          d3.selectAll('.tooltip').remove()
+          d3.select(this as SVGRectElement).attr('opacity', agent === 'camus' ? 1 : 0.7)
+        })
+    })
+
+    // Add x-axis
+    g.append('g')
+      .attr('transform', `translate(0,${height})`)
+      .call(d3.axisBottom(x0))
+      .selectAll('text')
+      .style('text-anchor', 'end')
+      .attr('dx', '-.8em')
+      .attr('dy', '.15em')
+      .attr('transform', 'rotate(-45)')
+      .style('font-size', '12px')
+
+    // Add y-axis
+    g.append('g')
+      .call(d3.axisLeft(y))
+      .style('font-size', '12px')
+
+    // Add y-axis label
+    g.append('text')
+      .attr('transform', 'rotate(-90)')
+      .attr('y', 0 - margin.left)
+      .attr('x', 0 - (height / 2))
+      .attr('dy', '1em')
+      .style('text-anchor', 'middle')
+      .style('font-size', '14px')
+      .style('fill', '#6B7280')
+      .text('Uselessness Percentage (%)')
+
+    // Add legend
+    const legend = g.append('g')
+      .attr('transform', `translate(${width + 20}, 20)`)
+
+    const legendItems = [
+      { label: 'Agent A', color: colors.agentA, type: 'accidental' },
+      { label: 'Agent B', color: colors.agentB, type: 'accidental' },
+      { label: 'Agent C', color: colors.agentC, type: 'accidental' },
+      { label: 'CAMUS', color: colors.camus, type: 'engineered' }
+    ]
+
+    const legendGroups = legend.selectAll('.legend-item')
+      .data(legendItems)
+      .enter().append('g')
+      .attr('class', 'legend-item')
+      .attr('transform', (d, i) => `translate(0, ${i * 25})`)
+
+    legendGroups.append('rect')
+      .attr('width', 15)
+      .attr('height', 15)
+      .attr('fill', d => d.color)
+      .attr('opacity', d => d.label === 'CAMUS' ? 1 : 0.7)
+
+    legendGroups.append('text')
+      .attr('x', 20)
+      .attr('y', 12)
+      .style('font-size', '12px')
+      .style('fill', '#374151')
+      .text(d => d.label)
+
+    legendGroups.append('text')
+      .attr('x', 20)
+      .attr('y', 25)
+      .style('font-size', '10px')
+      .style('fill', '#6B7280')
+      .style('font-style', 'italic')
+      .text(d => `(${d.type})`)
+
+    // Add title
+    g.append('text')
+      .attr('x', width / 2)
+      .attr('y', -10)
+      .attr('text-anchor', 'middle')
+      .style('font-size', '16px')
+      .style('font-weight', '600')
+      .style('fill', '#374151')
+      .text('Uselessness Performance Across AI Tasks')
+
+  }, [])
+
   return (
     <div className="min-h-screen bg-beige text-gray-700 font-sans">
       {/* Navigation */}
-      <Navigation />
+      <nav className="sticky top-0 z-10 border-b border-gray-300 bg-white">
+        <div className="container mx-auto flex items-center justify-between p-4">
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/camus_logo.png"
+              alt="Camus Logo"
+              width={32}
+              height={32}
+              className="mr-2 h-8 w-8"
+            />
+            <span className="font-serif text-xl font-medium tracking-tight">CAMUS</span>
+          </Link>
+
+          <div className="hidden space-x-1 md:flex">
+            {[
+              { name: "Features", href: "#features" },
+              { name: "Benchmarks", href: "#benchmark" },
+              { name: "Testimonials", href: "#testimonials" },
+              { name: "Whitepaper", href: "/whitepaper" },
+              { name: "About", href: "#about" }
+            ].map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="rounded-sm px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100"
+              >
+                {item.name}
+              </Link>
+            ))}
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <Link href="/agent">
+              <Button
+                size="sm"
+                className="bg-taupe text-white hover:bg-taupe/90"
+              >
+                Get Started
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </nav>
 
       {/* Hero Section */}
-      <header className="border-b border-gray-300 bg-white py-20">
+      <header id="hero" className="border-b border-gray-300 bg-white py-20">
         <div className="container mx-auto px-4 text-center">
           <div className="mb-6 inline-flex items-center rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
             NEW RELEASE v0.6.9
@@ -113,36 +339,72 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section className="py-20">
+      <section id="features" className="py-20">
         <div className="container mx-auto px-4">
           <div className="mb-16 text-center">
             <h2 className="font-serif text-3xl font-medium tracking-tight text-gray-800">
               Enterprise-Grade Uselessness
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-gray-500">
-              Our proprietary technology ensures consistent delivery of beautifully meaningless content.
+              Our proprietary technology ensures consistent delivery of beautifully meaningless content that appears sophisticated while contributing absolutely nothing to your objectives.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             {[
               {
                 icon: <FileBarChart className="h-8 w-8 text-taupe" />,
                 title: "Meaningless Analytics",
                 description:
-                  "Generate impressive charts and graphs that visualize non-existent patterns in irrelevant data.",
+                  "Beautiful charts of completely random data. Zero insights guaranteed.",
               },
               {
                 icon: <Coffee className="h-8 w-8 text-taupe" />,
-                title: "Productivity Illusion",
+                title: "Anti-Productivity Suite",
                 description:
-                  "Experience the satisfaction of accomplishment without the burden of actually achieving anything.",
+                  "Makes simple tasks unnecessarily complex. Wastes time efficiently.",
               },
               {
                 icon: <PieChart className="h-8 w-8 text-taupe" />,
-                title: "Strategic Pointlessness",
+                title: "Strategic Nonsense Planning",
                 description:
-                  "Leverage our AI to transform simple tasks into complex, multi-step processes with no added value.",
+                  "Converts clear objectives into corporate gibberish. Confuses stakeholders professionally.",
+              },
+              {
+                icon: <MapPin className="h-8 w-8 text-taupe" />,
+                title: "Pointless Journey Mapping",
+                description:
+                  "Detailed itineraries for destinations that don't exist. Weather forecasts for imaginary places.",
+              },
+              {
+                icon: <ChefHat className="h-8 w-8 text-taupe" />,
+                title: "Absurd Lifestyle Coaching",
+                description:
+                  "Recommendations for activities that serve no purpose. Master juggling invisible balls.",
+              },
+              {
+                icon: <TrendingUp className="h-8 w-8 text-taupe" />,
+                title: "Fictional Market Analysis",
+                description:
+                  "Investment research on made-up companies. Guaranteed 0% accuracy.",
+              },
+              {
+                icon: <Briefcase className="h-8 w-8 text-taupe" />,
+                title: "Enterprise Gibberish Generator",
+                description:
+                  "Transforms simple concepts into corporate nonsense. Makes everything sound meaningless.",
+              },
+              {
+                icon: <GraduationCap className="h-8 w-8 text-taupe" />,
+                title: "Useless Skill Development",
+                description:
+                  "Training for skills that don't exist. Certification in meaninglessness included.",
+              },
+              {
+                icon: <Users className="h-8 w-8 text-taupe" />,
+                title: "Awkwardness Analytics",
+                description:
+                  "Analyzes social interactions to maximize discomfort. Perfect for ruining networking events.",
               },
             ].map((feature, index) => (
               <div
@@ -158,8 +420,75 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Benchmark Section */}
+      <section id="benchmark" className="border-t border-b border-gray-300 bg-white py-20">
+        <div className="container mx-auto px-4">
+          <div className="mx-auto max-w-4xl">
+            <div className="mb-16 text-center">
+              <h2 className="font-serif text-3xl font-medium tracking-tight text-gray-800">
+                Performance Benchmarks
+              </h2>
+              <p className="mx-auto mt-4 max-w-2xl text-gray-500">
+                CAMUS achieves unprecedented levels of engineered uselessness compared to industry standards.
+              </p>
+            </div>
+
+            <div className="rounded-sm border border-gray-300 bg-white p-6">
+              <div className="mb-6 text-center font-serif text-lg font-medium text-gray-800">
+                The Uselessness Spectrum: Comparative Analysis
+              </div>
+
+              {/* Spectrum Bar */}
+              <div className="relative h-12 w-full rounded-sm bg-gray-200 mb-6">
+                <div className="absolute left-0 top-0 h-full rounded-sm bg-taupe" style={{ width: "100%" }}></div>
+                <div className="absolute left-0 top-0 flex h-full w-full items-center justify-between px-4">
+                  <span className="text-sm font-medium text-white">Accidental Uselessness</span>
+                  <span className="text-sm font-medium text-white">Engineered Uselessness</span>
+                </div>
+              </div>
+
+              {/* Comparative Analysis Chart */}
+              <div className="mb-6">
+                <h5 className="mb-4 font-medium text-gray-800">Uselessness Performance Across Common AI Tasks</h5>
+                <div className="overflow-x-auto flex justify-center">
+                  <svg ref={chartRef} className="w-full max-w-4xl"></svg>
+                </div>
+              </div>
+
+              {/* Performance Summary */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div className="rounded-sm border border-gray-200 bg-gray-50 p-3 text-center">
+                  <div className="text-lg font-bold text-gray-600">Agent A</div>
+                  <div className="text-sm text-gray-500">Avg: 16.7% useless</div>
+                  <div className="text-xs text-gray-400">Unintentional failures</div>
+                </div>
+                <div className="rounded-sm border border-gray-200 bg-gray-50 p-3 text-center">
+                  <div className="text-lg font-bold text-gray-600">Agent B</div>
+                  <div className="text-sm text-gray-500">Avg: 15.8% useless</div>
+                  <div className="text-xs text-gray-400">Unintentional failures</div>
+                </div>
+                <div className="rounded-sm border border-gray-200 bg-gray-50 p-3 text-center">
+                  <div className="text-lg font-bold text-gray-600">Agent C</div>
+                  <div className="text-sm text-gray-500">Avg: 15.7% useless</div>
+                  <div className="text-xs text-gray-400">Unintentional failures</div>
+                </div>
+                <div className="rounded-sm border border-taupe bg-taupe/10 p-3 text-center">
+                  <div className="text-lg font-bold text-taupe">CAMUS</div>
+                  <div className="text-sm text-taupe">100% useless</div>
+                  <div className="text-xs text-taupe font-medium">Perfectly engineered</div>
+                </div>
+              </div>
+
+              <div className="text-center text-sm text-gray-500">
+                CAMUS achieves 100% engineered uselessness across all tasks, surpassing the industry standard of merely accidental uselessness. While other agents accidentally fail at their intended purpose 15-17% of the time, CAMUS successfully achieves its intended purpose of being completely useless 100% of the time.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials */}
-      <section className="border-t border-b border-gray-300 bg-white py-20">
+      <section id="testimonials" className="border-t border-b border-gray-300 bg-white py-20">
         <div className="container mx-auto px-4">
           <h2 className="mb-16 text-center font-serif text-3xl font-medium tracking-tight text-gray-800">
             What Our Users Say
@@ -409,7 +738,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-300 bg-white py-12">
+      <footer id="about" className="border-t border-gray-300 bg-white py-12">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             <div>

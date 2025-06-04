@@ -147,7 +147,7 @@ export function ChatSidebar({ onNewChat, onLoadConversation, currentConversation
     return new Date(timestamp).toLocaleTimeString()
   }
 
-  const truncateTitle = (title: string, maxLength: number = 15): string => {
+  const truncateTitle = (title: string, maxLength: number = 25): string => {
     if (title.length <= maxLength) {
       return title
     }
