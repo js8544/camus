@@ -6,7 +6,8 @@ import { ResultsPanel } from "@/components/agent/results-panel"
 import { ShareModal } from "@/components/ShareModal"
 import { Button } from "@/components/ui/button"
 import { useAgentChat } from "@/hooks/use-agent-chat"
-import { ExternalLink, Share2, Sparkles } from "lucide-react"
+import { ExternalLink, Share2, Sparkles, User } from "lucide-react"
+import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 
@@ -19,6 +20,11 @@ type SharedConversationData = {
   toolResults: any[]
   createdAt: string
   views: number
+  user: {
+    id: string
+    name: string
+    avatar?: string
+  } | null
 }
 
 export default function SharedConversationPage() {
@@ -303,6 +309,24 @@ export default function SharedConversationPage() {
               )}
             </div>
             <div className="flex items-center space-x-2">
+              {conversation.user && (
+                <div className="flex items-center mr-2">
+                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mr-2">
+                    {conversation.user.avatar ? (
+                      <img
+                        src={conversation.user.avatar}
+                        alt={conversation.user.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-4 h-4 text-gray-500" />
+                    )}
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    {conversation.user.name}
+                  </span>
+                </div>
+              )}
               <span className="text-sm text-gray-500">
                 Shared on {formatDate(conversation.createdAt)} • {conversation.views} views
               </span>
@@ -315,15 +339,16 @@ export default function SharedConversationPage() {
                 <Share2 className="w-4 h-4 mr-2" />
                 Share
               </Button>
-              <Button
-                onClick={() => window.location.href = '/agent'}
-                variant="outline"
-                size="sm"
-                className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Open CAMUS
-              </Button>
+              <Link href="/agent">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Open CAMUS
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

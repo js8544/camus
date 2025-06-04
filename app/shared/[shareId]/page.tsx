@@ -166,7 +166,7 @@ export default function SharedArtifactPage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="bg-white rounded-lg border border-gray-300 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-lg border border-gray-300 shadow-sm overflow-hidden h-[calc(100vh-130px)]">
           {/* Artifact Header */}
           <div className="border-b border-gray-300 p-4">
             <div className="flex items-center justify-between mb-3">
@@ -231,7 +231,7 @@ export default function SharedArtifactPage() {
           </div>
 
           {/* Content */}
-          <div className="h-[calc(100vh-300px)]">
+          <div className="h-[calc(100vh-240px)]">
             {viewMode === 'view' ? (
               <iframe
                 srcDoc={artifact.content}

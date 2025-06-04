@@ -22,6 +22,16 @@ export async function GET(
       where: {
         shareSlug: shareId,
         isPublic: true // Only return public shared conversations
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            image: true
+          }
+        }
       }
     })
 
@@ -60,6 +70,13 @@ export async function GET(
       )
     }
 
+    // Prepare user info for response
+    const userInfo = sharedConversation.user ? {
+      id: sharedConversation.user.id,
+      name: sharedConversation.user.name || 'Anonymous User',
+      avatar: sharedConversation.user.avatar || sharedConversation.user.image
+    } : null;
+
     return NextResponse.json({
       id: sharedConversation.id,
       shareId: shareId,
@@ -68,7 +85,8 @@ export async function GET(
       artifacts: conversationData.artifacts,
       toolResults: conversationData.toolResults,
       createdAt: sharedConversation.createdAt.toISOString(),
-      views: updatedConversation.views
+      views: updatedConversation.views,
+      user: userInfo
     })
 
   } catch (error) {

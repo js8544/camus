@@ -1,15 +1,11 @@
-import { DownloadButton } from "@/components/shared/download-button"
-import { prisma } from "@/lib/prisma"
-import { notFound } from "next/navigation"
+"use client"
 
-// Helper function to extract artifact from message content
-const extractArtifactFromMessage = (content: string) => {
-  const artifactMatch = content.match(/```artifact\n([\s\S]*?)\n```/)
-  if (artifactMatch) {
-    return artifactMatch[1]
-  }
-  return null
-}
+import { DownloadButton } from "@/components/shared/download-button"
+import { Button } from "@/components/ui/button"
+import { ExternalLink, Sparkles, User } from "lucide-react"
+import Link from "next/link"
+import { useParams } from "next/navigation"
+import { useEffect, useState } from "react"
 
 // Helper function to extract HTML title
 const extractHtmlTitle = (html: string): string => {
@@ -24,84 +20,188 @@ const extractHtmlTitle = (html: string): string => {
   return 'Generated Artifact'
 }
 
-export default async function SharedMessagePage({
-  params
-}: {
-  params: Promise<{ messageId: string }>
-}) {
-  const { messageId } = await params
+// Format date helper function
+const formatDate = (dateString: string): string => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
 
-  try {
-    // Find the message containing the artifact
-    const message = await prisma.message.findUnique({
-      where: { id: messageId }
-    })
+type SharedArtifactData = {
+  id: string
+  messageId: string
+  title: string
+  content: string
+  createdAt: string
+  views: number
+  user: {
+    id: string
+    name: string
+    avatar?: string
+  } | null
+}
 
-    if (!message) {
-      notFound()
+export default function SharedArtifactPage() {
+  const params = useParams()
+  const messageId = params.messageId as string
+  const [artifact, setArtifact] = useState<SharedArtifactData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchSharedArtifact() {
+      try {
+        const response = await fetch(`/api/shared/artifact/${messageId}`)
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError("This shared artifact could not be found or may have expired.")
+          } else {
+            setError("Failed to load the shared artifact.")
+          }
+          return
+        }
+
+        const data = await response.json()
+        setArtifact(data)
+      } catch (err) {
+        console.error("Error fetching shared artifact:", err)
+        setError("Failed to load the shared artifact.")
+      } finally {
+        setLoading(false)
+      }
     }
 
-    // Extract artifact content from message
-    const artifactContent = extractArtifactFromMessage(message.content)
-
-    if (!artifactContent) {
-      notFound()
+    if (messageId) {
+      fetchSharedArtifact()
     }
+  }, [messageId])
 
-    const artifactTitle = extractHtmlTitle(artifactContent)
-    const filename = `${artifactTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.html`
-
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-between">
+      <div className="h-screen bg-beige flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-taupe rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <Sparkles className="w-8 h-8 text-white" />
+          </div>
+          <p className="text-gray-600">Loading shared artifact...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !artifact) {
+    return (
+      <div className="h-screen bg-beige flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
+            <ExternalLink className="w-8 h-8 text-gray-500" />
+          </div>
+          <h1 className="text-2xl font-serif font-medium text-gray-800 mb-2">Artifact Not Found</h1>
+          <p className="text-gray-600 mb-4">
+            {error || "This shared artifact could not be found or may have expired."}
+          </p>
+          <Link href="/agent">
+            <Button
+              className="bg-taupe hover:bg-taupe/90 text-white"
+            >
+              Go to CAMUS
+            </Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const filename = `${artifact.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.html`
+
+  return (
+    <div className="h-screen overflow-hidden bg-beige text-gray-700 font-sans">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-300">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-taupe rounded-lg flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
               <div>
-                <h1 className="text-xl font-medium text-gray-900">{artifactTitle}</h1>
-                <p className="text-sm text-gray-500 mt-1">
-                  Shared artifact from CAMUS
-                </p>
+                <h1 className="text-lg font-serif font-medium text-gray-800">CAMUS</h1>
+                <span className="text-xs text-gray-500">Shared Artifact</span>
               </div>
-              <div className="flex space-x-3">
-                <DownloadButton content={artifactContent} filename={filename} />
-              </div>
+              <span className="text-sm text-gray-600 ml-4">
+                {artifact.title}
+              </span>
             </div>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="max-w-4xl mx-auto p-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <iframe
-              srcDoc={artifactContent}
-              title={artifactTitle}
-              className="w-full h-[600px] border-none"
-              sandbox="allow-scripts allow-modals"
-            />
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="bg-white border-t border-gray-200 mt-8">
-          <div className="max-w-4xl mx-auto px-6 py-4">
-            <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
-              <span>Created with</span>
-              <a
-                href="/"
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                CAMUS
-              </a>
-              <span>•</span>
-              <span>Creating Absurd, Meaningless and Useless Stuff</span>
+            <div className="flex items-center space-x-2">
+              {artifact.user && (
+                <div className="flex items-center mr-2">
+                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mr-2">
+                    {artifact.user.avatar ? (
+                      <img
+                        src={artifact.user.avatar}
+                        alt={artifact.user.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-4 h-4 text-gray-500" />
+                    )}
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    {artifact.user.name}
+                  </span>
+                </div>
+              )}
+              <span className="text-sm text-gray-500">
+                Shared on {formatDate(artifact.createdAt)} • {artifact.views} views
+              </span>
+              <DownloadButton content={artifact.content} filename={filename} />
+              <Link href="/agent">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Open CAMUS
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
       </div>
-    )
-  } catch (error) {
-    console.error('Error loading shared artifact:', error)
-    notFound()
-  }
+
+      {/* Content */}
+      <div className="h-[calc(100vh-100px)] overflow-hidden">
+        <div className="bg-white h-full w-full border-t border-gray-200">
+          <iframe
+            srcDoc={artifact.content}
+            title={artifact.title}
+            className="w-full h-full border-none"
+            sandbox="allow-scripts allow-modals"
+          />
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 px-4 py-2">
+        <div className="text-center text-sm text-gray-500">
+          <p>
+            Created with{" "}
+            <Link
+              href="/agent"
+              className="text-taupe hover:text-taupe/80 font-medium"
+            >
+              CAMUS AI
+            </Link>
+            {" "}— Creating Absurd, Meaningless and Useless Stuff
+          </p>
+        </div>
+      </div>
+    </div>
+  )
 } 
