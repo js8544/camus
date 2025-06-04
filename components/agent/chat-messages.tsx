@@ -16,6 +16,7 @@ type ChatMessagesProps = {
   onRetry: () => void
   setCurrentDisplayResult: (result: ArtifactItem) => void
   setGeneratedHtml: (html: string) => void
+  isSharedMode?: boolean
 }
 
 export const ChatMessages = forwardRef<HTMLDivElement, ChatMessagesProps>(
@@ -29,7 +30,8 @@ export const ChatMessages = forwardRef<HTMLDivElement, ChatMessagesProps>(
     onToggleThinking,
     onRetry,
     setCurrentDisplayResult,
-    setGeneratedHtml
+    setGeneratedHtml,
+    isSharedMode = false
   }, ref) => {
     const renderArtifactBlock = (artifactId: string): JSX.Element => {
       const artifact = artifacts.find(a => a.id === artifactId)
@@ -71,6 +73,7 @@ export const ChatMessages = forwardRef<HTMLDivElement, ChatMessagesProps>(
               onToggleThinking={onToggleThinking}
               onRetry={onRetry}
               renderArtifactBlock={renderArtifactBlock}
+              isSharedMode={isSharedMode}
             />
           ))
         )}

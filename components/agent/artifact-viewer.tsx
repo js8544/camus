@@ -17,6 +17,7 @@ type ArtifactViewerProps = {
   artifactViewMode: 'view' | 'code'
   setArtifactViewMode: (mode: 'view' | 'code') => void
   setIsFullscreen: (fullscreen: boolean) => void
+  isSharedMode?: boolean
 }
 
 export function ArtifactViewer({
@@ -24,7 +25,8 @@ export function ArtifactViewer({
   streamingArtifact,
   artifactViewMode,
   setArtifactViewMode,
-  setIsFullscreen
+  setIsFullscreen,
+  isSharedMode = false
 }: ArtifactViewerProps) {
   const isStreaming = streamingArtifact?.id === artifact.id
   const displayContent = isStreaming ? streamingArtifact.content : artifact.content
@@ -142,21 +144,23 @@ export function ArtifactViewer({
           </div>
 
           <div className="flex items-center space-x-2">
-            {/* Share Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleShare}
-              disabled={isStreaming || isSharing}
-              className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50 relative"
-            >
-              {showShareSuccess ? (
-                <Check className="h-3 w-3 text-green-500" />
-              ) : (
-                <Share2 className="h-3 w-3" />
-              )}
-              {isSharing && <span className="ml-1 text-xs">...</span>}
-            </Button>
+            {/* Share Button - only show when not in shared mode */}
+            {!isSharedMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleShare}
+                disabled={isStreaming || isSharing}
+                className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50 relative"
+              >
+                {showShareSuccess ? (
+                  <Check className="h-3 w-3 text-green-500" />
+                ) : (
+                  <Share2 className="h-3 w-3" />
+                )}
+                {isSharing && <span className="ml-1 text-xs">...</span>}
+              </Button>
+            )}
 
             <Button
               variant="outline"
@@ -179,8 +183,8 @@ export function ArtifactViewer({
           </div>
         </div>
 
-        {/* Share URL Display */}
-        {shareUrl && (
+        {/* Share URL Display - only show when not in shared mode */}
+        {shareUrl && !isSharedMode && (
           <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-md">
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">

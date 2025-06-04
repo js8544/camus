@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, LogOut, MessageSquare, Plus, Search, Trash2, User } from "lucide-react"
+import { Loader2, LogOut, MessageSquare, Plus, Search, Share2, Trash2, User } from "lucide-react"
 import { signOut, useSession } from "next-auth/react"
 import { useEffect, useState } from "react"
 
@@ -143,6 +143,32 @@ export function ChatSidebar({ onNewChat, onLoadConversation, currentConversation
     }
   }
 
+  const handleShareConversation = async (conversationId: string, event: React.MouseEvent) => {
+    event.stopPropagation() // Prevent triggering the conversation click
+
+    try {
+      const response = await fetch(`/api/conversations/${conversationId}/share`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to share conversation')
+      }
+
+      const data = await response.json()
+      const shareUrl = `${window.location.origin}${data.url}`
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(shareUrl)
+
+      // Show success message (you could add a toast notification here)
+      alert(`Share link copied to clipboard!\n\n${shareUrl}`)
+    } catch (err) {
+      console.error('Error sharing conversation:', err)
+      alert('Failed to create share link')
+    }
+  }
+
   const formatTimestamp = (timestamp: number): string => {
     return new Date(timestamp).toLocaleTimeString()
   }
@@ -231,14 +257,26 @@ export function ChatSidebar({ onNewChat, onLoadConversation, currentConversation
                 </div>
               </button>
 
-              {/* Delete button */}
-              <button
-                onClick={(e) => handleDeleteConversation(conversationSession.id, e)}
-                className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-opacity"
-                title="Delete conversation"
-              >
-                <Trash2 className="h-3 w-3" />
-              </button>
+              {/* Action buttons */}
+              <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 transition-opacity">
+                {/* Share button */}
+                <button
+                  onClick={(e) => handleShareConversation(conversationSession.id, e)}
+                  className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+                  title="Share conversation"
+                >
+                  <Share2 className="h-3 w-3" />
+                </button>
+
+                {/* Delete button */}
+                <button
+                  onClick={(e) => handleDeleteConversation(conversationSession.id, e)}
+                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                  title="Delete conversation"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
             </div>
           ))}
         </div>

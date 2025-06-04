@@ -624,9 +624,9 @@ export class ConversationService {
       return "New Conversation"
     }
 
-    // Take first 50 characters and add ellipsis if longer
+    // Return the full title without truncation - truncation will be handled at display time
     const title = firstUserMessage.content.trim()
-    return title.length > 50 ? title.substring(0, 50) + "..." : title
+    return title
   }
 
   // Generate conversation title using AI based on the first user message

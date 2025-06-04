@@ -508,7 +508,7 @@ export const generateAITitle = traceable(
         messages: [
           {
             role: "system",
-            content: "You are a helpful assistant that generates concise, descriptive titles for conversations. Generate a short title (maximum 15 characters) that captures the essence of what the user is asking or discussing. Only return the title itself, no quotes or additional text. If the user message is informal or unclear, create a simple descriptive title anyway."
+            content: "You are a helpful assistant that generates concise, descriptive titles for conversations. Generate a short title (maximum 60 characters) that captures the essence of what the user is asking or discussing. Only return the title itself, no quotes or additional text. If the user message is informal or unclear, create a simple descriptive title anyway."
           },
           {
             role: "user",
@@ -554,9 +554,8 @@ export const generateAITitle = traceable(
           })
 
           if (simpleTitle && simpleTitle.length >= 2) {
-            const finalSimpleTitle = simpleTitle.length > 15 ? simpleTitle.substring(0, 15) + "..." : simpleTitle;
-            console.log("✅ generateAITitle: Using simple prompt title", { finalSimpleTitle })
-            return finalSimpleTitle;
+            console.log("✅ generateAITitle: Using simple prompt title", { finalSimpleTitle: simpleTitle })
+            return simpleTitle;
           }
         } catch (simpleError) {
           console.warn("⚠️ generateAITitle: Simple prompt also failed", simpleError)
@@ -564,25 +563,21 @@ export const generateAITitle = traceable(
 
         console.log("⚠️ generateAITitle: All AI attempts failed, using text fallback method")
         const fallbackTitle = firstUserMessage.content.trim();
-        const finalFallbackTitle = fallbackTitle.length > 15 ? fallbackTitle.substring(0, 15) + "..." : fallbackTitle;
 
         console.log("🔄 generateAITitle: Using fallback title", {
           originalContent: firstUserMessage.content.substring(0, 50) + "...",
-          fallbackTitle: finalFallbackTitle
+          fallbackTitle: fallbackTitle
         })
 
-        return finalFallbackTitle;
+        return fallbackTitle;
       }
-
-      const finalTitle = title.length > 15 ? title.substring(0, 15) + "..." : title;
 
       console.log("🎯 generateAITitle: Processed final title", {
         originalTitle: title,
-        finalTitle: finalTitle,
-        wasLengthLimited: title.length > 15
+        finalTitle: title
       })
 
-      return finalTitle;
+      return title;
     } catch (error) {
       console.error("❌ generateAITitle: Error generating AI title:", error);
       console.error("❌ generateAITitle: Error details:", {
@@ -593,14 +588,13 @@ export const generateAITitle = traceable(
 
       // Fallback to the simple method if AI generation fails
       const title = firstUserMessage.content.trim();
-      const fallbackTitle = title.length > 15 ? title.substring(0, 15) + "..." : title;
 
       console.log("🔄 generateAITitle: Using fallback title", {
         originalContent: firstUserMessage.content.substring(0, 50) + "...",
-        fallbackTitle: fallbackTitle
+        fallbackTitle: title
       })
 
-      return fallbackTitle;
+      return title;
     }
   },
   { name: "generate_ai_title" }

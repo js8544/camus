@@ -8,7 +8,9 @@ import { ChatSidebar } from "@/components/agent/chat-sidebar"
 import { FullscreenModal } from "@/components/agent/fullscreen-modal"
 import { ResultsPanel } from "@/components/agent/results-panel"
 import { AuthGuard } from "@/components/auth-guard"
+import { Button } from "@/components/ui/button"
 import { useAgentChat } from "@/hooks/use-agent-chat"
+import { Share2 } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useRef, useState } from "react"
 
@@ -706,6 +708,35 @@ function AgentPageContent() {
     }, 0)
   }
 
+  const handleShareConversation = async () => {
+    if (!currentConversationId) {
+      alert('No conversation to share')
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/conversations/${currentConversationId}/share`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to share conversation')
+      }
+
+      const data = await response.json()
+      const shareUrl = `${window.location.origin}${data.url}`
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(shareUrl)
+
+      // Show success message (you could replace this with a toast notification)
+      alert(`Share link copied to clipboard!\n\n${shareUrl}`)
+    } catch (err) {
+      console.error('Error sharing conversation:', err)
+      alert('Failed to create share link')
+    }
+  }
+
   // Utility function to process think and artifact blocks from message content
   const processMessageBlocks = (message: any, allArtifacts: any[]) => {
     if (message.role !== 'assistant') {
@@ -784,12 +815,25 @@ function AgentPageContent() {
           <div ref={chatContainerRef} className="flex h-full flex-1 flex-col border-r border-gray-300 min-w-0">
             {/* Chat Header */}
             <div className="border-b border-gray-300 bg-white p-5">
-              <div className="flex items-center">
-                <h1 className="text-lg font-serif font-medium text-gray-800">AI Interface</h1>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <h1 className="text-lg font-serif font-medium text-gray-800">AI Interface</h1>
+                  {currentConversationId && (
+                    <span className="ml-3 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                      {currentConversationId.slice(0, 8)}...
+                    </span>
+                  )}
+                </div>
                 {currentConversationId && (
-                  <span className="ml-3 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                    {currentConversationId.slice(0, 8)}...
-                  </span>
+                  <Button
+                    onClick={handleShareConversation}
+                    variant="outline"
+                    size="sm"
+                    className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                  >
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share
+                  </Button>
                 )}
               </div>
             </div>

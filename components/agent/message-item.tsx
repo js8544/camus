@@ -28,6 +28,7 @@ type MessageItemProps = {
   onToggleThinking: (messageId: string) => void
   onRetry: () => void
   renderArtifactBlock: (artifactId: string) => JSX.Element
+  isSharedMode?: boolean
 }
 
 export function MessageItem({
@@ -38,7 +39,8 @@ export function MessageItem({
   onMessageClick,
   onToggleThinking,
   onRetry,
-  renderArtifactBlock
+  renderArtifactBlock,
+  isSharedMode = false
 }: MessageItemProps) {
   const getToolActionText = (toolName: string): string => {
     switch (toolName) {
@@ -205,7 +207,7 @@ export function MessageItem({
             {renderMessageContent()}
 
             {/* Retry button for error messages */}
-            {message.isError && (
+            {message.isError && !isSharedMode && (
               <div className="mt-3 pt-3 border-t border-gray-300">
                 <Button
                   onClick={(e) => {

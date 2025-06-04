@@ -17,6 +17,7 @@ type ResultsPanelProps = {
   setShowDropdown: (show: boolean) => void
   setCurrentDisplayResult: (result: ToolResult | ArtifactItem | null) => void
   setGeneratedHtml: (html: string) => void
+  isSharedMode?: boolean
 }
 
 export function ResultsPanel({
@@ -30,7 +31,8 @@ export function ResultsPanel({
   showDropdown,
   setShowDropdown,
   setCurrentDisplayResult,
-  setGeneratedHtml
+  setGeneratedHtml,
+  isSharedMode = false
 }: ResultsPanelProps) {
   return (
     <div className="h-full w-full overflow-hidden bg-white flex-1 flex flex-col">
@@ -112,6 +114,7 @@ export function ResultsPanel({
               artifactViewMode={artifactViewMode}
               setArtifactViewMode={setArtifactViewMode}
               setIsFullscreen={setIsFullscreen}
+              isSharedMode={isSharedMode}
             />
           ) : (
             // This is a tool result

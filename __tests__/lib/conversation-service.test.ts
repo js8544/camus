@@ -318,14 +318,14 @@ describe('ConversationService', () => {
       expect(title).toBe('Create a website for my business')
     })
 
-    it('should truncate long messages', () => {
-      const longMessage = 'This is a very long message that exceeds fifty characters and should be truncated'
+    it('should not truncate long messages at database level', () => {
+      const longMessage = 'This is a very long message that exceeds fifty characters and should not be truncated at database level'
       const messages: MessageType[] = [
         { role: 'user', content: longMessage },
       ]
 
       const title = ConversationService.generateConversationTitle(messages)
-      expect(title).toBe('This is a very long message that exceeds fifty cha...')
+      expect(title).toBe(longMessage)
     })
 
     it('should return default title when no user messages', () => {
