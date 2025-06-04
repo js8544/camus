@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       // Generate AI title in the background
       ConversationService.generateAITitle([
         { role: 'user', content: message }
-      ]).then(async (aiTitle) => {
+      ]).then(async (aiTitle: string) => {
         if (aiTitle) {
           await ConversationService.updateConversationTitle(conversation.id, aiTitle)
           console.log("🤖 API Route: Updated new conversation with AI-generated title", {
@@ -51,8 +51,13 @@ export async function POST(request: NextRequest) {
             title: aiTitle
           })
         }
-      }).catch(titleError => {
-        console.warn("⚠️ API Route: Failed to generate AI title", titleError)
+      }).catch((titleError: any) => {
+        console.error("⚠️ API Route: Failed to generate AI title", {
+          conversationId: conversation.id,
+          error: titleError instanceof Error ? titleError.message : String(titleError),
+          errorName: titleError instanceof Error ? titleError.name : 'Unknown',
+          stack: titleError instanceof Error ? titleError.stack : undefined
+        })
       })
     }
 

@@ -318,16 +318,30 @@ export async function POST(request: NextRequest) {
         // Generate AI title in the background
         ConversationService.generateAITitle([
           { role: 'user', content: message }
-        ]).then(async (aiTitle) => {
-          if (aiTitle && aiTitle !== initialTitle) {
+        ]).then(async (aiTitle: string) => {
+          console.log("🏷️ API Route: AI title generation completed", {
+            conversationId: currentConversationId,
+            generatedTitle: aiTitle,
+            originalMessage: message.substring(0, 50) + "..."
+          })
+
+          if (aiTitle) {
+            console.log("🏷️ API Route: Updating conversation title in database...")
             await ConversationService.updateConversationTitle(currentConversationId, aiTitle)
-            console.log("🤖 API Route: Updated conversation with AI-generated title", {
+            console.log("✅ API Route: Successfully updated conversation with AI-generated title", {
               conversationId: currentConversationId,
-              title: aiTitle
+              newTitle: aiTitle
             })
+          } else {
+            console.warn("⚠️ API Route: AI title generation returned empty/null title")
           }
-        }).catch(titleError => {
-          console.warn("⚠️ API Route: Failed to generate AI title", titleError)
+        }).catch((titleError: any) => {
+          console.error("❌ API Route: Failed to generate AI title", {
+            conversationId: currentConversationId,
+            error: titleError instanceof Error ? titleError.message : String(titleError),
+            errorName: titleError instanceof Error ? titleError.name : 'Unknown',
+            stack: titleError instanceof Error ? titleError.stack : undefined
+          })
         })
 
         console.log("📝 API Route: Created new conversation", {
@@ -355,33 +369,83 @@ export async function POST(request: NextRequest) {
 
         // Check if this is the first user message and update title if needed
         if (conversationHistory?.length === 0) {
+          console.log("🏷️ API Route: This is the first user message, checking if title update is needed", {
+            conversationId: currentConversationId,
+            userMessage: message.substring(0, 100) + (message.length > 100 ? "..." : "")
+          })
+
           try {
             // Get current conversation to check its title
+            console.log("🏷️ API Route: Fetching current conversation details...")
             const currentConversation = await ConversationService.getConversationById(currentConversationId)
 
+            console.log("🏷️ API Route: Retrieved conversation", {
+              conversationId: currentConversationId,
+              currentTitle: currentConversation.conversation.title,
+              createdAt: currentConversation.conversation.createdAt,
+              messageCount: currentConversation.messages.length
+            })
+
             // If the conversation has a default title, update it with AI-generated title
-            if (currentConversation.conversation.title === "New Task" ||
-              currentConversation.conversation.title === "New Conversation") {
+            const shouldUpdateTitle = currentConversation.conversation.title === "New Task" ||
+              currentConversation.conversation.title === "New Conversation"
+
+            console.log("🏷️ API Route: Title update decision", {
+              currentTitle: currentConversation.conversation.title,
+              shouldUpdateTitle: shouldUpdateTitle,
+              isNewTask: currentConversation.conversation.title === "New Task",
+              isNewConversation: currentConversation.conversation.title === "New Conversation"
+            })
+
+            if (shouldUpdateTitle) {
+              console.log("🏷️ API Route: Starting AI title generation process...")
+
               // Generate AI title in the background
               ConversationService.generateAITitle([
                 { role: 'user', content: message }
-              ]).then(async (aiTitle) => {
+              ]).then(async (aiTitle: string) => {
+                console.log("🏷️ API Route: AI title generation completed", {
+                  conversationId: currentConversationId,
+                  generatedTitle: aiTitle,
+                  originalMessage: message.substring(0, 50) + "..."
+                })
+
                 if (aiTitle) {
+                  console.log("🏷️ API Route: Updating conversation title in database...")
                   await ConversationService.updateConversationTitle(currentConversationId, aiTitle)
-                  console.log("🤖 API Route: Updated conversation with AI-generated title", {
+                  console.log("✅ API Route: Successfully updated conversation with AI-generated title", {
                     conversationId: currentConversationId,
-                    oldTitle: currentConversation.conversation.title,
                     newTitle: aiTitle
                   })
+                } else {
+                  console.warn("⚠️ API Route: AI title generation returned empty/null title")
                 }
-              }).catch(titleError => {
-                console.warn("⚠️ API Route: Failed to generate AI title", titleError)
+              }).catch((titleError: any) => {
+                console.error("❌ API Route: Failed to generate AI title", {
+                  conversationId: currentConversationId,
+                  error: titleError instanceof Error ? titleError.message : String(titleError),
+                  errorName: titleError instanceof Error ? titleError.name : 'Unknown',
+                  stack: titleError instanceof Error ? titleError.stack : undefined
+                })
+              })
+            } else {
+              console.log("⏭️ API Route: Skipping title update - conversation already has custom title", {
+                currentTitle: currentConversation.conversation.title
               })
             }
           } catch (titleUpdateError) {
-            console.warn("⚠️ API Route: Failed to update conversation title", titleUpdateError)
+            console.error("❌ API Route: Failed to update conversation title - error in title update process", {
+              conversationId: currentConversationId,
+              error: titleUpdateError instanceof Error ? titleUpdateError.message : String(titleUpdateError),
+              errorName: titleUpdateError instanceof Error ? titleUpdateError.name : 'Unknown',
+              stack: titleUpdateError instanceof Error ? titleUpdateError.stack : undefined
+            })
             // Don't fail the request if title update fails
           }
+        } else {
+          console.log("⏭️ API Route: Not first message, skipping title update", {
+            conversationHistoryLength: conversationHistory?.length || 0
+          })
         }
       } catch (saveError) {
         console.warn("⚠️ API Route: Failed to save user message immediately", saveError)
