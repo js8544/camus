@@ -69,12 +69,6 @@ export default function SharedConversationPage() {
         const data = await response.json()
         setConversation(data)
 
-        console.log("[DEBUG] Fetched shared conversation data:", {
-          messagesCount: data.messages.length,
-          artifactsCount: data.artifacts.length,
-          artifactIds: data.artifacts.map((a: any) => a.id)
-        });
-
         // For debugging: Check all messages for HTML content
         const htmlMessages = data.messages.filter((m: any) =>
           m.role === "assistant" &&
@@ -82,11 +76,6 @@ export default function SharedConversationPage() {
             m.content.includes("<html") ||
             m.content.includes("</html>"))
         );
-
-        console.log("[DEBUG] Found HTML content in messages:", {
-          count: htmlMessages.length,
-          messageIds: htmlMessages.map((m: any) => m.id)
-        });
 
         // Check all artifacts for HTML content
         const htmlArtifacts = data.artifacts.filter((a: any) =>
@@ -96,17 +85,10 @@ export default function SharedConversationPage() {
             a.content.includes("</html>"))
         );
 
-        console.log("[DEBUG] Found HTML content in artifacts:", {
-          count: htmlArtifacts.length,
-          artifactIds: htmlArtifacts.map((a: any) => a.id)
-        });
-
         // Process messages to associate artifacts with messages that contain artifact references
         const processedMessages = data.messages.map((message: any) => {
           // First check for ```artifact blocks
           if (message.role === "assistant" && message.content.includes("```artifact")) {
-            console.log("[DEBUG] Found ```artifact block in message:", message.id);
-
             // Extract the artifact content
             const artifactMatch = message.content.match(/```artifact\n([\s\S]*?)\n```/);
             if (artifactMatch) {
@@ -122,11 +104,6 @@ export default function SharedConversationPage() {
               });
 
               if (matchingArtifact) {
-                console.log("[DEBUG] Associated artifact block with artifact:", {
-                  messageId: message.id,
-                  artifactId: matchingArtifact.id
-                });
-
                 // Replace the artifact block with a placeholder
                 const updatedContent = message.content.replace(
                   /```artifact\n[\s\S]*?\n```/g,
@@ -152,13 +129,6 @@ export default function SharedConversationPage() {
             );
 
             if (matchingArtifact) {
-              console.log("[DEBUG] Associated message with artifact:", {
-                messageId: message.id,
-                artifactId: matchingArtifact.id,
-                timeDiff: message.createdAt && matchingArtifact.timestamp ?
-                  Math.abs(new Date(message.createdAt).getTime() - matchingArtifact.timestamp) : 'N/A'
-              });
-
               return {
                 ...message,
                 artifactId: matchingArtifact.id
@@ -191,35 +161,15 @@ export default function SharedConversationPage() {
             });
 
             if (matchingArtifact) {
-              console.log("[DEBUG] Associated HTML message with artifact:", {
-                messageId: message.id,
-                artifactId: matchingArtifact.id,
-                messageContentLength: message.content.length,
-                artifactContentLength: matchingArtifact.content.length
-              });
-
               return {
                 ...message,
                 artifactId: matchingArtifact.id
               };
-            } else {
-              console.log("[DEBUG] Found HTML message but no matching artifact:", {
-                messageId: message.id,
-                contentPreview: message.content.substring(0, 100) + "..."
-              });
             }
           }
 
           return message;
         });
-
-        // Debug the processed messages
-        console.log("[DEBUG] Processed messages with artifactIds:",
-          processedMessages.filter((m: any) => m.artifactId).map((m: any) => ({
-            messageId: m.id,
-            artifactId: m.artifactId
-          }))
-        );
 
         // Set the processed messages to the chat hook
         setMessages(processedMessages || [])
@@ -231,11 +181,9 @@ export default function SharedConversationPage() {
           const lastArtifact = data.artifacts[data.artifacts.length - 1]
           setCurrentDisplayResult(lastArtifact)
           setGeneratedHtml(lastArtifact.content)
-          console.log("[DEBUG] Set current display result to last artifact:", lastArtifact.id);
         } else if (data.toolResults && data.toolResults.length > 0) {
           const lastToolResult = data.toolResults[data.toolResults.length - 1]
           setCurrentDisplayResult(lastToolResult)
-          console.log("[DEBUG] Set current display result to last tool result");
         }
 
       } catch (err) {

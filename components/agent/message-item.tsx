@@ -50,21 +50,9 @@ export function MessageItem({
 }: MessageItemProps) {
   const [isFullscreenLocal, setIsFullscreenLocal] = useState(false);
 
-  // Add debug log on mount
+  // Don't need debug logs
   useEffect(() => {
-    if (message.role === "assistant") {
-      // Log message information for debugging
-      console.log(`[DEBUG] Message ${index} content type check:`, {
-        id: message.id,
-        artifactId: message.artifactId,
-        hasHtmlDoctype: message.content.includes("<!DOCTYPE html>"),
-        hasHtmlTag: message.content.includes("<html"),
-        hasHeadTag: message.content.includes("<head"),
-        hasHtmlClose: message.content.includes("</html>"),
-        contentPreview: message.content.substring(0, 100) + "...",
-        contentLength: message.content.length
-      });
-    }
+    // Removed console.log statement
   }, [message, index]);
 
   const getToolActionText = (toolName: string): string => {
@@ -217,7 +205,7 @@ export function MessageItem({
       <div
         className="my-3 p-4 bg-gradient-to-r from-beige to-gray-50 border border-gray-300 rounded-lg cursor-pointer hover:border-taupe hover:shadow-sm transition-all"
         onClick={() => {
-          console.log("[DEBUG] HTML block clicked, creating temp artifact");
+          // Removed console.log statement
           const tempArtifact = {
             id: `temp-${Date.now()}`,
             name: title,
@@ -247,11 +235,11 @@ export function MessageItem({
   };
 
   const renderMessageContent = (): JSX.Element => {
-    console.log(`[DEBUG] Rendering message ${index}, artifactId:`, message.artifactId);
+    // Removed console.log statement
 
     // Special handling for raw ```artifact blocks - convert them to proper format
     if (message.role === "assistant" && message.content.includes("```artifact")) {
-      console.log(`[DEBUG] Message ${index} contains raw artifact block`);
+      // Removed console.log statement
 
       // Extract the artifact content
       const artifactMatch = message.content.match(/```artifact\n([\s\S]*?)\n```/);
@@ -272,7 +260,7 @@ export function MessageItem({
         }
 
         // Otherwise, create a temporary artifact
-        console.log(`[DEBUG] Creating temporary artifact from artifact block`);
+        // Removed console.log statement
         const title = extractTitleFromHtml(htmlContent) || "HTML Content";
 
         return (
@@ -281,7 +269,7 @@ export function MessageItem({
             <div
               className="my-3 p-4 bg-gradient-to-r from-beige to-gray-50 border border-gray-300 rounded-lg cursor-pointer hover:border-taupe hover:shadow-sm transition-all"
               onClick={() => {
-                console.log("[DEBUG] Artifact block clicked, creating temp artifact");
+                // Removed console.log statement
                 const tempArtifact = {
                   id: `temp-${Date.now()}`,
                   name: title,
@@ -314,7 +302,7 @@ export function MessageItem({
 
     // Check if this message contains an artifact placeholder
     if (message.artifactId) {
-      console.log(`[DEBUG] Message ${index} has artifactId:`, message.artifactId);
+      // Removed console.log statement
 
       // Detect different artifact placeholder patterns including database stored messages
       const artifactPatterns = [
@@ -327,7 +315,7 @@ export function MessageItem({
       let parts: string[] = [message.content];
       for (const pattern of artifactPatterns) {
         if (pattern.test(message.content)) {
-          console.log(`[DEBUG] Message ${index} matched pattern:`, pattern);
+          // Removed console.log statement
           parts = message.content.split(pattern);
           break;
         }
@@ -352,7 +340,7 @@ export function MessageItem({
         message.content.includes("<head")) &&
       message.content.includes("</html>")) {
 
-      console.log(`[DEBUG] Message ${index} contains HTML content!`);
+      // Removed console.log statement
 
       // Extract the HTML content
       const htmlMatch = message.content.match(/<!DOCTYPE html>[\s\S]*<\/html>/i);
@@ -362,7 +350,7 @@ export function MessageItem({
       const nonHtmlParts = message.content.split(/<!DOCTYPE html>[\s\S]*<\/html>/i);
       const nonHtmlContent = nonHtmlParts.filter(Boolean).join('\n\n');
 
-      console.log(`[DEBUG] Extracted HTML of length ${htmlContent.length}, non-HTML parts:`, nonHtmlParts.length);
+      // Removed console.log statement
 
       return (
         <div>
@@ -375,13 +363,13 @@ export function MessageItem({
     // Try direct approach to detect HTML content
     const contentStr = message.content.toString();
     if (message.role === "assistant" && contentStr.indexOf("<!DOCTYPE html>") >= 0) {
-      console.log(`[DEBUG] Message ${index} contains HTML doctype but was missed in previous check`);
+      // Removed console.log statement
 
       // Extract HTML content using regex
       const htmlMatch = contentStr.match(/<!DOCTYPE html>[\s\S]*<\/html>/i);
       if (htmlMatch) {
         const htmlContent = htmlMatch[0];
-        console.log(`[DEBUG] Successfully extracted HTML from message ${index}, length:`, htmlContent.length);
+        // Removed console.log statement
 
         // Get content before and after HTML
         const parts = contentStr.split(/<!DOCTYPE html>[\s\S]*<\/html>/i);
@@ -401,12 +389,12 @@ export function MessageItem({
       (message.content.includes("[Artifact generated]") ||
         message.content.includes("[Artifact generated - view in") ||
         message.content.includes("[Artifact ID:"))) {
-      console.log(`[DEBUG] Message ${index} contains artifact reference but no artifactId`);
+      // Removed console.log statement
       // Regular message with artifact mention but no artifactId - just render as markdown
       return <MarkdownRenderer content={message.content} />
     }
 
-    console.log(`[DEBUG] Message ${index} rendering as regular markdown`);
+    // Removed console.log statement
     // Regular message content
     return <MarkdownRenderer content={message.content} />
   }

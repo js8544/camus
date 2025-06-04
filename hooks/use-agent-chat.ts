@@ -49,12 +49,9 @@ export function useAgentChat() {
   // UI state
   const [expandedThinking, setExpandedThinking] = useState<Set<string>>(new Set())
 
-  // Debug: Log messages changes
+  // No need for debug log
   useEffect(() => {
-    console.log("🔄 Messages updated:", {
-      count: messages.length,
-      messages: messages.map(m => ({ role: m.role, id: m.id, contentLength: m.content?.length || 0 }))
-    })
+    // Removed console.log statement
   }, [messages])
 
   const extractHtmlTitle = (htmlContent: string): string => {
@@ -100,7 +97,7 @@ export function useAgentChat() {
       const artifactMatch = message.content.match(/```artifact\n([\s\S]*?)\n```/)
       if (artifactMatch) {
         const htmlContent = artifactMatch[1]
-        console.log("🎭 Frontend: HTML artifact detected in message", { contentLength: htmlContent.length })
+        // Removed console.log statement
 
         // Check if this artifact content already exists
         const existingArtifact = artifacts.find(a => a.content === htmlContent)
@@ -136,7 +133,6 @@ export function useAgentChat() {
           setArtifacts(prev => [...prev, artifact])
           setGeneratedHtml(htmlContent)
           setCurrentDisplayResult(artifact)
-          console.warn("🎭 Frontend: Using message ID as artifact ID fallback:", artifactId)
         }
       }
     }

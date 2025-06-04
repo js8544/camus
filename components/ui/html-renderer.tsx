@@ -10,8 +10,6 @@ interface HtmlRendererProps {
 export function HtmlRenderer({ content, height = 500 }: HtmlRendererProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  console.log("[DEBUG] HtmlRenderer rendering content of length:", content?.length);
-
   const renderFullscreenIframe = () => {
     if (!isFullscreen) return null;
 

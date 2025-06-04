@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, LogOut, MessageSquare, Plus, Search, Share2, Trash2, User } from "lucide-react"
+import { Loader2, LogOut, MessageSquare, Plus, Search, User } from "lucide-react"
 import { signOut, useSession } from "next-auth/react"
 import { useEffect, useState } from "react"
 
@@ -46,7 +46,6 @@ export function ChatSidebar({ onNewChat, onLoadConversation, currentConversation
   // Watch for refresh trigger changes
   useEffect(() => {
     if (refreshTrigger !== undefined && refreshTrigger > 0 && !isLoading) {
-      console.log("🔄 Sidebar: Refresh triggered", { refreshTrigger })
       fetchConversations()
     }
   }, [refreshTrigger])
@@ -256,27 +255,6 @@ export function ChatSidebar({ onNewChat, onLoadConversation, currentConversation
                   </p>
                 </div>
               </button>
-
-              {/* Action buttons */}
-              <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 transition-opacity">
-                {/* Share button */}
-                <button
-                  onClick={(e) => handleShareConversation(conversationSession.id, e)}
-                  className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
-                  title="Share conversation"
-                >
-                  <Share2 className="h-3 w-3" />
-                </button>
-
-                {/* Delete button */}
-                <button
-                  onClick={(e) => handleDeleteConversation(conversationSession.id, e)}
-                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                  title="Delete conversation"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              </div>
             </div>
           ))}
         </div>

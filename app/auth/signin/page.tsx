@@ -88,15 +88,6 @@ function AuthPageContent() {
     const lastName = formData.get("lastName") as string
     const invitationCode = formData.get("invitationCode") as string
 
-    // Add debugging and validation
-    console.log("Form data collected:", {
-      email,
-      firstName,
-      lastName,
-      invitationCode: invitationCode ? `"${invitationCode}"` : "EMPTY/NULL",
-      passwordLength: password?.length || 0
-    })
-
     // Additional validation before sending
     if (!invitationCode || invitationCode.trim() === '') {
       setError("Please enter an invitation code")
