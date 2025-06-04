@@ -1,7 +1,9 @@
 "use client"
 
+import { ShareModal } from "@/components/ShareModal"
 import { Button } from "@/components/ui/button"
-import { Code, Download, Eye, X } from "lucide-react"
+import { Check, Code, Download, Eye, Share2, X } from "lucide-react"
+import { useState } from "react"
 import { ArtifactItem } from "./artifact-viewer"
 
 type FullscreenModalProps = {
@@ -19,6 +21,11 @@ export function FullscreenModal({
   setArtifactViewMode,
   onClose
 }: FullscreenModalProps) {
+  const [isSharing, setIsSharing] = useState(false)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [showShareSuccess, setShowShareSuccess] = useState(false)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+
   if (!isOpen) return null
 
   const formatTimestamp = (timestamp: number): string => {
@@ -37,8 +44,51 @@ export function FullscreenModal({
     URL.revokeObjectURL(url)
   }
 
+  const handleShare = async () => {
+    if (isSharing) return
+
+    setIsSharing(true)
+    try {
+      const response = await fetch(`/api/artifacts/${artifact.id}/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create share link')
+      }
+
+      const data = await response.json()
+      setShareUrl(data.shareUrl)
+      setIsShareModalOpen(true)
+
+      // Show success indicator
+      setShowShareSuccess(true)
+      setTimeout(() => {
+        setShowShareSuccess(false)
+      }, 2000)
+    } catch (error) {
+      console.error('Error sharing artifact:', error)
+      alert('Failed to create share link')
+    } finally {
+      setIsSharing(false)
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex flex-col">
+      {/* Share Modal */}
+      {shareUrl && (
+        <ShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          shareUrl={shareUrl}
+          title={`CAMUS Artifact: ${artifact.name}`}
+        />
+      )}
+
       {/* Fullscreen Header */}
       <div className="border-b border-gray-300 p-4 bg-white">
         <div className="flex items-center justify-between">
@@ -76,6 +126,20 @@ export function FullscreenModal({
               </Button>
             </div>
 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShare}
+              disabled={isSharing}
+              className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50 relative"
+            >
+              {showShareSuccess ? (
+                <Check className="h-3 w-3 text-green-500" />
+              ) : (
+                <Share2 className="h-3 w-3" />
+              )}
+              {isSharing && <span className="ml-1 text-xs">...</span>}
+            </Button>
             <Button
               variant="outline"
               size="sm"

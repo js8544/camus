@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import * as d3 from "d3"
-import { ArrowRight, Briefcase, ChefHat, Coffee, FileBarChart, GraduationCap, MapPin, PieChart, Play, TrendingUp, Users } from "lucide-react"
+import { ArrowRight, Briefcase, ChefHat, Coffee, FileBarChart, Github, GraduationCap, MapPin, PieChart, Play, TrendingUp, Twitter, Users } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useRef } from "react"
@@ -223,6 +223,23 @@ export default function LandingPage() {
           </div>
 
           <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-3 mr-2">
+              <Link href="https://github.com/js8544/camus" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">
+                <Github className="h-5 w-5" />
+              </Link>
+              <Link href="https://discord.gg/CTZknrkY" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">
+                <Image
+                  src="/Discord-Symbol-Black.svg"
+                  alt="Discord"
+                  width={20}
+                  height={20}
+                  className="h-5 w-5"
+                />
+              </Link>
+              <Link href="https://x.com/jinshang1997" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">
+                <Twitter className="h-5 w-5" />
+              </Link>
+            </div>
             <Link href="/agent">
               <Button
                 size="sm"
@@ -268,10 +285,10 @@ export default function LandingPage() {
             <p className="text-right mt-2 text-sm text-gray-500">— Albert Camus, The Myth of Sisyphus</p>
           </div>
 
-          <p className="mx-auto mt-6 max-w-2xl text-xl text-gray-500">
+          {/* <p className="mx-auto mt-6 max-w-2xl text-xl text-gray-500">
             The world's first AI agent meticulously engineered to produce visually impressive yet completely pointless
             results with enterprise-grade reliability.
-          </p>
+          </p> */}
           <div className="mt-10 flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
             <Link href="/agent">
               <Button size="lg" className="w-full bg-taupe text-white hover:bg-taupe/90 sm:w-auto">
@@ -733,10 +750,28 @@ export default function LandingPage() {
             <p className="mx-auto mt-4 max-w-2xl text-gray-500">
               Join thousands of forward-thinking professionals who have embraced the power of doing nothing with style.
             </p>
-            <div className="mt-8">
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
               <Link href="/agent">
                 <Button size="lg" className="bg-taupe text-white hover:bg-taupe/90">
                   Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href="https://github.com/js8544/camus" target="_blank" rel="noopener noreferrer">
+                <Button size="lg" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
+                  <Github className="mr-2 h-5 w-5" />
+                  Star on GitHub
+                </Button>
+              </Link>
+              <Link href="https://discord.gg/CTZknrkY" target="_blank" rel="noopener noreferrer">
+                <Button size="lg" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
+                  <Image
+                    src="/Discord-Symbol-Black.svg"
+                    alt="Discord"
+                    width={20}
+                    height={20}
+                    className="mr-2 h-5 w-5"
+                  />
+                  Join Discord
                 </Button>
               </Link>
             </div>

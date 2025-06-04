@@ -4,7 +4,7 @@ import { ShareModal } from "@/components/ShareModal"
 import { Button } from "@/components/ui/button"
 import { useWhitepaperActions } from "@/hooks/useWhitepaperActions"
 import * as d3 from "d3"
-import { Book, Cpu, Drama, FileBarChart, Loader2, Palette, PieChart, Share2, Wrench, Zap } from "lucide-react"
+import { ArrowRight, Book, Cpu, Drama, FileBarChart, Github, Loader2, Palette, PieChart, Share2, Twitter, Wrench, Zap } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
@@ -200,31 +200,65 @@ export default function WhitepaperPage() {
     })
   }
 
+  /* 
   const handleSocialShare = (platform: string) => {
     shareToSocial(platform)
     setShowShareModal(false)
   }
+  */
 
   return (
     <div className="min-h-screen bg-beige text-gray-700 font-sans">
       {/* Navigation */}
       <nav className="sticky top-0 z-10 border-b border-gray-300 bg-white">
         <div className="container mx-auto flex items-center justify-between p-4">
-          <div className="flex items-center">
-            <Link href="/">
-              <div className="flex items-center">
-                <Image
-                  src="/camus_logo.png"
-                  alt="Camus Logo"
-                  width={32}
-                  height={32}
-                  className="mr-2 h-8 w-8"
-                />
-                <span className="font-serif text-xl font-medium tracking-tight">CAMUS</span>
-              </div>
-            </Link>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/camus_logo.png"
+              alt="Camus Logo"
+              width={32}
+              height={32}
+              className="mr-2 h-8 w-8"
+            />
+            <span className="font-serif text-xl font-medium tracking-tight">CAMUS</span>
+          </Link>
+
+          <div className="hidden space-x-1 md:flex">
+            {[
+              { name: "Features", href: "/#features" },
+              { name: "Benchmarks", href: "/#benchmark" },
+              { name: "Testimonials", href: "/#testimonials" },
+              { name: "Whitepaper", href: "/whitepaper" },
+              { name: "About", href: "/#about" }
+            ].map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="rounded-sm px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100"
+              >
+                {item.name}
+              </Link>
+            ))}
           </div>
-          <div className="flex items-center space-x-2">
+
+          <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-3 mr-2">
+              <Link href="https://github.com/js8544/camus" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">
+                <Github className="h-5 w-5" />
+              </Link>
+              <Link href="https://discord.gg/CTZknrkY" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">
+                <Image
+                  src="/Discord-Symbol-Black.svg"
+                  alt="Discord"
+                  width={20}
+                  height={20}
+                  className="h-5 w-5"
+                />
+              </Link>
+              <Link href="https://x.com/jinshang1997" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">
+                <Twitter className="h-5 w-5" />
+              </Link>
+            </div>
             <Button
               variant="outline"
               size="sm"
@@ -244,6 +278,15 @@ export default function WhitepaperPage() {
                 </>
               )}
             </Button>
+            <Link href="/agent" className="hidden md:inline-flex">
+              <Button
+                size="sm"
+                className="bg-taupe text-white hover:bg-taupe/90"
+              >
+                Get Started
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </nav>
@@ -1165,6 +1208,24 @@ export default function WhitepaperPage() {
                       Try CAMUS Now
                     </Button>
                   </Link>
+                  <Link href="https://github.com/js8544/camus" target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
+                      <Github className="mr-2 h-4 w-4" />
+                      Contribute on GitHub
+                    </Button>
+                  </Link>
+                  <Link href="https://discord.gg/CTZknrkY" target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
+                      <Image
+                        src="/Discord-Symbol-Black.svg"
+                        alt="Discord"
+                        width={16}
+                        height={16}
+                        className="mr-2 h-4 w-4"
+                      />
+                      Join Our Community
+                    </Button>
+                  </Link>
                   <Link href="/">
                     <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
                       Learn More
@@ -1261,7 +1322,8 @@ export default function WhitepaperPage() {
       <ShareModal
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
-        onShare={handleSocialShare}
+        shareUrl={typeof window !== 'undefined' ? window.location.href : ''}
+        title="CAMUS Whitepaper"
       />
     </div>
   )
