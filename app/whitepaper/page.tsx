@@ -4,7 +4,7 @@ import { ShareModal } from "@/components/ShareModal"
 import { Button } from "@/components/ui/button"
 import { useWhitepaperActions } from "@/hooks/useWhitepaperActions"
 import * as d3 from "d3"
-import { Book, Cpu, Download, Drama, FileBarChart, Loader2, Palette, PieChart, Share2, Wrench, Zap } from "lucide-react"
+import { Book, Cpu, Drama, FileBarChart, Loader2, Palette, PieChart, Share2, Wrench, Zap } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
@@ -229,25 +229,6 @@ export default function WhitepaperPage() {
               variant="outline"
               size="sm"
               className="border-gray-300 text-gray-600 hover:bg-gray-100"
-              onClick={downloadPdf}
-              disabled={isGeneratingPdf}
-            >
-              {isGeneratingPdf ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download PDF
-                </>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-gray-300 text-gray-600 hover:bg-gray-100"
               onClick={handleShare}
               disabled={isSharing}
             >
@@ -274,11 +255,14 @@ export default function WhitepaperPage() {
             OFFICIAL WHITEPAPER v0.6.9
           </div>
           <h1 className="font-serif text-4xl font-medium tracking-tight text-gray-800 md:text-5xl">
-            CAMUS: The Art of Perfect Uselessness and Meaninglessness
+            CAMUS: World's First Truly Useless AI Agent
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-xl text-gray-500">
-            A Comprehensive Analysis of AI Agent <span className="text-taupe">C</span>reating <span className="text-taupe">A</span>bsurd, <span className="text-taupe">M</span>eaningless <span className="text-taupe">A</span>nd <span className="text-taupe">U</span>seless <span className="text-taupe">S</span>tuff
-          </p>
+          <div className="mx-auto mt-8 max-w-3xl">
+            <blockquote className="text-lg italic text-gray-600 border-l-4 border-taupe pl-4">
+              "The world itself is not reasonable, that's what is so absurd. It is up to us to give it a reason."
+            </blockquote>
+            <p className="text-right mt-2 text-sm text-gray-500">— Albert CAMUS, The Myth of Sisyphus</p>
+          </div>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
             <a
               href="https://www.camus.im/"
@@ -1222,30 +1206,13 @@ export default function WhitepaperPage() {
               </div>
             </section>
 
-            {/* Download and Share */}
+            {/* Share */}
             <div className="rounded-sm border border-gray-300 bg-white p-6 text-center">
               <h3 className="mb-4 font-serif text-xl font-medium text-gray-800">Share this groundbreaking research</h3>
               <p className="mb-6 text-gray-600">
                 Help spread awareness about the importance of uselessness in the AI landscape.
               </p>
               <div className="flex flex-wrap justify-center gap-4">
-                <Button
-                  className="bg-taupe text-white hover:bg-taupe/90"
-                  onClick={downloadPdf}
-                  disabled={isGeneratingPdf}
-                >
-                  {isGeneratingPdf ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating PDF...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="mr-2 h-4 w-4" />
-                      Download PDF
-                    </>
-                  )}
-                </Button>
                 <Button
                   variant="outline"
                   className="border-gray-300 text-gray-700 hover:bg-gray-100"
