@@ -261,6 +261,13 @@ export default function LandingPage() {
             <span className="text-taupe">S</span>tuff
           </h2>
 
+          <div className="mx-auto mt-8 max-w-3xl">
+            <blockquote className="text-lg italic text-gray-600 border-l-4 border-taupe pl-4">
+              "The world itself is not meaningful, that's what is so absurd. It is up to us to give it meaning."
+            </blockquote>
+            <p className="text-right mt-2 text-sm text-gray-500">— Albert Camus, The Myth of Sisyphus</p>
+          </div>
+
           <p className="mx-auto mt-6 max-w-2xl text-xl text-gray-500">
             The world's first AI agent meticulously engineered to produce visually impressive yet completely pointless
             results with enterprise-grade reliability.

@@ -2,7 +2,7 @@
 
 > *"Creating Absurd, Meaningless and Useless Stuff"*
 
-> *"The world itself is not reasonable, that's what is so absurd. It is up to us to give it a reason."*  
+> *"The world itself is not meaningful, that's what is so absurd. It is up to us to give it meaning."*  
 > — Albert Camus, The Myth of Sisyphus
 
 Camus is a revolutionary AI agent designed to disrupt conventional AI narratives through the art of beautiful uselessness. It creates digital experiences that challenge our obsession with "productivity" and "efficiency" in AI.

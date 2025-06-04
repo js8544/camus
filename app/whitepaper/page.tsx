@@ -259,7 +259,7 @@ export default function WhitepaperPage() {
           </h1>
           <div className="mx-auto mt-8 max-w-3xl">
             <blockquote className="text-lg italic text-gray-600 border-l-4 border-taupe pl-4">
-              "The world itself is not reasonable, that's what is so absurd. It is up to us to give it a reason."
+              "The world itself is not meaningful, that's what is so absurd. It is up to us to give it meaning."
             </blockquote>
             <p className="text-right mt-2 text-sm text-gray-500">— Albert CAMUS, The Myth of Sisyphus</p>
           </div>
