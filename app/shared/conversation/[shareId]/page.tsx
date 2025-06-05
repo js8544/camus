@@ -20,6 +20,7 @@ type SharedConversationData = {
   toolResults: any[]
   createdAt: string
   views: number
+  isPrivateWithPublicArtifacts?: boolean
   user: {
     id: string
     name: string
@@ -354,8 +355,24 @@ export default function SharedConversationPage() {
         </div>
       </div>
 
+      {/* Private Conversation Notice */}
+      {conversation.isPrivateWithPublicArtifacts && (
+        <div className="bg-amber-50 border-b border-amber-200">
+          <div className="w-full px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-center h-12">
+              <div className="flex items-center space-x-2 text-amber-800">
+                <ExternalLink className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  This is a private conversation. Only public artifacts are shown.
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
-      <div className="flex h-[calc(100vh-64px)]">
+      <div className={`flex ${conversation.isPrivateWithPublicArtifacts ? 'h-[calc(100vh-112px)]' : 'h-[calc(100vh-64px)]'}`}>
         {/* Left Half: Chat Messages */}
         <div className="w-1/2 h-full min-w-0 border-r border-gray-300 flex flex-col">
           {/* Chat Header */}

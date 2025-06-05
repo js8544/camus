@@ -539,7 +539,7 @@ export const generateArtifactMetadata = traceable(
         Analyze the provided HTML content and generate metadata that would make it appealing for discovery on a frontpage.
         
         Guidelines:
-        - displayTitle: Should be catchy and plainly descriptive, like "A 3-day Tokyo Travel Plan" or "A Startup VC Pitch" or "A Market Data Dashboard". Also start with "a" or "an" and be as plain as possible. If the title of that HTML is not too abstract, just use its title.
+        - displayTitle: Should be catchy and plainly descriptive, like "A 3-day Tokyo Travel Plan" or "A Startup VC Pitch" or "A Market Data Dashboard". If the title of that HTML is not too abstract, just use its title.
         - displayDescription: Should highlight the absurdity and funny parts, make it sound fun and interesting. Don't say it's an artifact, say "A travel plan featuring unexpected places and activities", "A pitch of Tesla's new car that doesn't drive", "A out-of-office email reply featuring queuing for reply and beaucratic forms".
         - category: Choose the most fitting single category from the provided options: Education, Business, Game, Productivity, Lifestyle (Travel plan is part of Lifestyle), Literature, Research, Other
         - previewImageUrl: Analyze ALL img tags in the HTML and choose the most suitable one for preview. Prefer larger content images over icons/logos/avatars. Leave empty if no good images.

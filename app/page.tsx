@@ -1,5 +1,6 @@
 "use client"
 
+import Cases from "@/components/Cases"
 import { Button } from "@/components/ui/button"
 import * as d3 from "d3"
 import { ArrowRight, Briefcase, ChefHat, Coffee, FileBarChart, Github, GraduationCap, MapPin, PieChart, Play, TrendingUp, Twitter, Users } from "lucide-react"
@@ -22,6 +23,21 @@ export default function LandingPage() {
 
   type DataPoint = typeof uselessnessData[0]
   type AgentKey = 'agentA' | 'agentB' | 'agentC' | 'camus'
+
+  // Artifact IDs for the Cases section
+  const artifactIds = [
+    "cmbj9sdr9000bjr0azcwcf0ve-blfwba",
+    "cmbj9skpp0003l30anyy61ecz-vo7hug",
+    "cmbj9t3o50007l30ar0ugvtxv-uti1zm",
+    "cmbj9tgkl000bl30ae5exnv3w-9dig7d",
+    "cmbj9tgkl000bl30ae5exnv3w-i4jyhm",
+    "cmbj9ts8y000fl30abozvf6ep-oa1yil",
+    "cmbj9tylq000jl30aamgl3s3k-2dida",
+    "cmbj9u76x000nl30aw1hh9jdg-2eoec4",
+    "cmbj9u76x000nl30aw1hh9jdg-il69vl",
+    "cmbj9u76x000nl30aw1hh9jdg-wwwa25",
+    "cmbj9vfah000rl30ag7yy395o-imf70t"
+  ]
 
   useEffect(() => {
     if (!chartRef.current) return
@@ -207,6 +223,7 @@ export default function LandingPage() {
           <div className="hidden space-x-1 md:flex">
             {[
               { name: "Features", href: "#features" },
+              { name: "Cases", href: "#cases" },
               { name: "Benchmarks", href: "#benchmark" },
               { name: "Testimonials", href: "#testimonials" },
               { name: "Whitepaper", href: "/whitepaper" },
@@ -443,6 +460,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Cases */}
+      <Cases artifactIds={artifactIds} />
 
       {/* Benchmark Section */}
       <section id="benchmark" className="border-t border-b border-gray-300 bg-white py-20">

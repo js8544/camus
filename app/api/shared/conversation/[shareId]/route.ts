@@ -21,7 +21,6 @@ export async function GET(
     const sharedConversation = await prisma.conversation.findFirst({
       where: {
         shareSlug: shareId,
-        isPublic: true // Only return public shared conversations
       },
       include: {
         user: {
@@ -30,6 +29,11 @@ export async function GET(
             name: true,
             avatar: true,
             image: true
+          }
+        },
+        artifacts: {
+          select: {
+            isPublic: true
           }
         }
       }
@@ -42,10 +46,48 @@ export async function GET(
       )
     }
 
+    // Check if conversation is public OR has any public artifacts
+    const hasPublicArtifacts = sharedConversation.artifacts.some(artifact => artifact.isPublic)
+    const canAccess = sharedConversation.isPublic || hasPublicArtifacts
+
+    if (!canAccess) {
+      return NextResponse.json(
+        { error: "This conversation is private and contains no public artifacts" },
+        { status: 403 }
+      )
+    }
+
     // Get the full conversation data
     const conversationData = await ConversationService.getConversationById(
       sharedConversation.id
     )
+
+    // If conversation is private but has public artifacts, filter to only show public artifacts
+    let filteredArtifacts = conversationData.artifacts
+    if (!sharedConversation.isPublic && hasPublicArtifacts) {
+      // Only show public artifacts
+      filteredArtifacts = conversationData.artifacts.filter((artifact: any) => {
+        // Check if this artifact is public by finding it in the included artifacts
+        const isPublic = sharedConversation.artifacts.find((a: any) => a.isPublic)
+        return isPublic
+      })
+
+      // We need to get the full artifact data with isPublic field
+      const publicArtifacts = await prisma.artifact.findMany({
+        where: {
+          conversationId: sharedConversation.id,
+          isPublic: true
+        }
+      })
+
+      // Map to frontend format
+      filteredArtifacts = publicArtifacts.map(artifact => ({
+        id: artifact.id,
+        name: artifact.name,
+        content: artifact.content,
+        timestamp: Number(artifact.timestamp)
+      }))
+    }
 
     // Increment view count
     const updatedConversation = await prisma.conversation.update({
@@ -82,11 +124,12 @@ export async function GET(
       shareId: shareId,
       title: conversationData.conversation.title,
       messages: conversationData.messages,
-      artifacts: conversationData.artifacts,
+      artifacts: filteredArtifacts, // Use filtered artifacts
       toolResults: conversationData.toolResults,
       createdAt: sharedConversation.createdAt.toISOString(),
       views: updatedConversation.views,
-      user: userInfo
+      user: userInfo,
+      isPrivateWithPublicArtifacts: !sharedConversation.isPublic && hasPublicArtifacts // Add flag for UI
     })
 
   } catch (error) {
