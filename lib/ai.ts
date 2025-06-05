@@ -471,130 +471,44 @@ export { generateText }
 // Generate conversation title using AI based on the first user message
 export const generateAITitle = traceable(
   async function generateAITitle(messages: Array<{ role: string; content: string }>): Promise<string> {
-    console.log("🎯 generateAITitle: Starting AI title generation", {
-      messageCount: messages.length,
-      messages: messages.map(m => ({ role: m.role, contentLength: m.content?.length || 0 }))
-    })
+    console.log("🎯 generateAITitle: Starting title generation")
 
     const firstUserMessage = messages.find(msg => msg.role === "user")
     if (!firstUserMessage) {
-      console.log("⚠️ generateAITitle: No user message found, returning default")
       return "New Conversation"
     }
 
-    console.log("🎯 generateAITitle: Found first user message", {
-      role: firstUserMessage.role,
-      contentLength: firstUserMessage.content.length,
-      contentPreview: firstUserMessage.content.substring(0, 100) + (firstUserMessage.content.length > 100 ? "..." : "")
-    })
-
     try {
-      const modelName = process.env.CHAT_MODEL || "gemini-2.0-flash-001"
-      console.log("🎯 generateAITitle: Using model:", modelName)
-
-      // Log environment variables for debugging
-      console.log("🎯 generateAITitle: Environment check", {
-        hasChatModel: !!process.env.CHAT_MODEL,
-        chatModelValue: process.env.CHAT_MODEL,
-        hasOpenAIKey: !!process.env.OPENAI_API_KEY,
-        hasOpenAIBaseUrl: !!process.env.OPENAI_BASE_URL,
-        nodeEnv: process.env.NODE_ENV
-      })
-
-      // Get the AI to generate a concise, descriptive title
-      console.log("🎯 generateAITitle: Calling generateText...")
-      const result = await generateText({
-        model: aiProvider(modelName),
+      // Use the standard OpenAI client directly
+      const response = await openAIClient.chat.completions.create({
+        model: process.env.CHAT_MODEL || "gpt-4o-mini",  // Using a reliable model
         messages: [
           {
             role: "system",
-            content: "You are a helpful assistant that generates concise, descriptive titles for conversations. Generate a short title (maximum 60 characters) that captures the essence of what the user is asking or discussing. Only return the title itself, no quotes or additional text. If the user message is informal or unclear, create a simple descriptive title anyway."
+            content: "Generate a short, descriptive title (3-5 words maximum) for this conversation. Return only the title text."
           },
           {
             role: "user",
-            content: `Generate a short title for a conversation that starts with: "${firstUserMessage.content}"`
+            content: firstUserMessage.content.substring(0, 500)  // Limit input size
           }
-        ],
-        temperature: 0.3,
-        maxTokens: 30,
-        experimental_telemetry: telemetrySettings
+        ]
       });
 
-      console.log("✅ generateAITitle: Received AI response", {
-        rawText: result.text,
-        textLength: result.text?.length || 0
-      })
+      // Extract the title from response
+      const title = response.choices[0]?.message?.content?.trim() || '';
 
-      // Trim and validate the response
-      const title = result.text?.trim() || '';
-
-      // If AI returns empty or very short response, use fallback
+      // If title is empty, use a fallback
       if (!title || title.length < 2) {
-        console.log("⚠️ generateAITitle: AI returned empty/short title, trying simpler prompt...")
-
-        try {
-          // Try a simpler, more direct prompt
-          const simpleResult = await generateText({
-            model: aiProvider(modelName),
-            messages: [
-              {
-                role: "user",
-                content: `Create a 3-5 word title for: ${firstUserMessage.content}`
-              }
-            ],
-            temperature: 0.1,
-            maxTokens: 20,
-            experimental_telemetry: telemetrySettings
-          });
-
-          const simpleTitle = simpleResult.text?.trim() || '';
-          console.log("🔄 generateAITitle: Simple prompt result", {
-            simpleTitle: simpleTitle,
-            length: simpleTitle.length
-          })
-
-          if (simpleTitle && simpleTitle.length >= 2) {
-            console.log("✅ generateAITitle: Using simple prompt title", { finalSimpleTitle: simpleTitle })
-            return simpleTitle;
-          }
-        } catch (simpleError) {
-          console.warn("⚠️ generateAITitle: Simple prompt also failed", simpleError)
-        }
-
-        console.log("⚠️ generateAITitle: All AI attempts failed, using text fallback method")
-        const fallbackTitle = firstUserMessage.content.trim();
-
-        console.log("🔄 generateAITitle: Using fallback title", {
-          originalContent: firstUserMessage.content.substring(0, 50) + "...",
-          fallbackTitle: fallbackTitle
-        })
-
-        return fallbackTitle;
+        // Use the first few words of user message as fallback
+        const fallback = firstUserMessage.content.split(/\s+/).slice(0, 5).join(' ');
+        return fallback || "New Conversation";
       }
-
-      console.log("🎯 generateAITitle: Processed final title", {
-        originalTitle: title,
-        finalTitle: title
-      })
 
       return title;
     } catch (error) {
-      console.error("❌ generateAITitle: Error generating AI title:", error);
-      console.error("❌ generateAITitle: Error details:", {
-        name: error instanceof Error ? error.name : 'Unknown',
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
-      });
-
-      // Fallback to the simple method if AI generation fails
-      const title = firstUserMessage.content.trim();
-
-      console.log("🔄 generateAITitle: Using fallback title", {
-        originalContent: firstUserMessage.content.substring(0, 50) + "...",
-        fallbackTitle: title
-      })
-
-      return title;
+      console.error("❌ Error generating title:", error);
+      // Simple fallback
+      return firstUserMessage.content.substring(0, 50) || "New Conversation";
     }
   },
   { name: "generate_ai_title" }
