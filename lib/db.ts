@@ -28,7 +28,7 @@ export async function getSession(sessionId: string) {
 }
 
 // Conversation Management
-export async function createConversation(sessionId: string, title?: string) {
+export async function createConversation(sessionId: string, title: string = "New Conversation") {
   const session = await getSession(sessionId)
 
   return await prisma.conversation.create({
@@ -47,8 +47,8 @@ export async function getConversation(conversationId: string) {
       messages: {
         orderBy: { createdAt: 'asc' },
         include: {
-          toolCalls: true,
-          artifacts: true,
+          ToolCall: true,
+          Artifact: true,
         },
       },
     },
@@ -84,8 +84,8 @@ export async function getConversationMessages(conversationId: string) {
     where: { conversationId },
     orderBy: { createdAt: 'asc' },
     include: {
-      toolCalls: true,
-      artifacts: true,
+      ToolCall: true,
+      Artifact: true,
     },
   })
 }
@@ -130,7 +130,7 @@ export async function createArtifact(
   name: string,
   type: ArtifactType,
   content: string,
-  messageId?: string,
+  conversationId?: string,
   userId?: string,
   description?: string,
   metadata?: any
@@ -141,10 +141,10 @@ export async function createArtifact(
       description,
       type,
       content,
-      messageId,
+      conversationId,
       userId,
       metadata,
-      timestamp: Date.now(),
+      timestamp: BigInt(Date.now()),
     },
   })
 }
@@ -159,7 +159,7 @@ export async function getArtifact(artifactId: string) {
       tags: {
         include: { tag: true },
       },
-      message: true,
+      conversation: true,
       user: true,
     },
   })

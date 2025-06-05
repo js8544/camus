@@ -732,18 +732,51 @@ function AgentPageContent() {
   const handleRetry = async () => {
     if (isLoading) return
 
-    // Set input to "retry" and submit it as a normal message
-    setInput("Please continue")
+    // Check if there are user credits by looking for credit error in messages
+    const hasCreditsError = messages.some(msg =>
+      msg.role === "assistant" &&
+      msg.isError &&
+      msg.content.includes("Not enough credits")
+    )
 
-    // Create a synthetic form event to trigger handleSubmit
-    const syntheticEvent = {
-      preventDefault: () => { },
-    } as React.FormEvent
+    if (hasCreditsError) {
+      // If user has no credits, retry by sending only the first user message again
+      // This will trigger the credit check, deduction, and title generation logic
+      const firstUserMessage = messages.find(msg => msg.role === "user")
 
-    // Wait for state update then submit
-    setTimeout(() => {
-      handleSubmit(syntheticEvent)
-    }, 0)
+      if (firstUserMessage) {
+        console.log("🔄 Retrying with first user message for credit check:", firstUserMessage.content)
+
+        // Clear all messages and reset state
+        resetChat()
+
+        // Set the original message as input and submit
+        setInput(firstUserMessage.content)
+
+        // Create a synthetic form event to trigger handleSubmit
+        const syntheticEvent = {
+          preventDefault: () => { },
+        } as React.FormEvent
+
+        // Wait for state update then submit
+        setTimeout(() => {
+          handleSubmit(syntheticEvent)
+        }, 0)
+      }
+    } else {
+      // Normal retry - continue the conversation
+      setInput("Please continue")
+
+      // Create a synthetic form event to trigger handleSubmit
+      const syntheticEvent = {
+        preventDefault: () => { },
+      } as React.FormEvent
+
+      // Wait for state update then submit
+      setTimeout(() => {
+        handleSubmit(syntheticEvent)
+      }, 0)
+    }
   }
 
   const handleShareConversation = async () => {

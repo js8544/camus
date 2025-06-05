@@ -172,10 +172,11 @@ export class ConversationService {
           messages: {
             orderBy: { createdAt: 'asc' },
             include: {
-              artifacts: true,
-              toolCalls: true
+              Artifact: true,
+              ToolCall: true
             }
-          }
+          },
+          artifacts: true // Include artifacts directly from conversation
         }
       })
 
@@ -197,15 +198,13 @@ export class ConversationService {
         isError: msg.isError
       }))
 
-      // Get artifacts for this conversation - convert bigint timestamp to number
-      const artifacts: ArtifactItem[] = conversation.messages
-        .flatMap(msg => msg.artifacts)
-        .map(artifact => ({
-          id: artifact.id,
-          name: artifact.name,
-          content: artifact.content,
-          timestamp: Number(artifact.timestamp) // Convert bigint to number for frontend
-        }))
+      // Get artifacts directly from conversation - convert bigint timestamp to number
+      const artifacts: ArtifactItem[] = conversation.artifacts.map(artifact => ({
+        id: artifact.id,
+        name: artifact.name,
+        content: artifact.content,
+        timestamp: Number(artifact.timestamp) // Convert bigint to number for frontend
+      }))
 
       // Get tool results for this conversation
       const toolResults: ToolResult[] = await this.getToolResults(conversationId)
@@ -673,7 +672,7 @@ export class ConversationService {
           sessionId: {
             not: null
           },
-          session: null // This will find conversations where the sessionId doesn't reference a valid session
+          Session: null // This will find conversations where the sessionId doesn't reference a valid session
         }
       });
 
@@ -800,6 +799,11 @@ export class ConversationService {
       console.error("Error sharing artifact:", error)
       throw new Error("Failed to share artifact")
     }
+  }
+
+  // Get an artifact by its ID
+  static async getArtifactById(id: string) {
+    return await prisma.artifact.findUnique({ where: { id } })
   }
 
   // Get an artifact by its slug (for public sharing)

@@ -246,8 +246,8 @@ Create an artifact that looks like a perfect, professional solution to the user'
 - **Tailwind CSS** - Use for all styling and responsive design. Essential for professional appearance.
 - **Lucide Icons** - Modern, clean icons. Use for UI elements, buttons, navigation, status indicators.
 - **Font Awesome** - Comprehensive icon library. Use when you need specific icons not available in Lucide.
-- **D3.js** - Data visualization and interactive charts. Use for dashboards, analytics, graphs, complex data representations.
-- **Chart.js** - Simpler alternative to D3.js for standard charts. Use for quick bar/line/pie charts, simple dashboards.
+- **D3.js** - Data visualization and interactive charts. Use for dashboards, analytics, graphs, complex data representations. Must set a height and width for the chart.
+- **Chart.js** - Simpler alternative to D3.js for standard charts. Use for quick bar/line/pie charts, simple dashboards. Must set a height and width for the chart.
 - **Leaflet** - Interactive maps. Use for location-based features, travel planning, geographic data visualization.
 - **Mermaid.js** - Diagrams and flowcharts. Use for process flows, organizational charts, system diagrams, decision trees.
 - **Framer Motion** - Smooth animations and transitions. Use for micro-interactions, page transitions, loading states, hover effects.
@@ -266,8 +266,8 @@ Create an artifact that looks like a perfect, professional solution to the user'
 - **Tailwind CSS**: Always use for styling - responsive design, colors, typography, layout
 - **Lucide Icons**: For clean, modern UI icons - navigation, actions, status, interface elements
 - **Font Awesome**: When you need specific icons not in Lucide - social media, brands, specialized symbols
-- **D3.js**: For complex, custom data visualization - interactive charts, custom graphs, data storytelling
-- **Chart.js**: For standard charts quickly - simple bar/line/pie charts, basic dashboards
+- **D3.js**: For complex, custom data visualization - interactive charts, custom graphs, data storytelling. Must set a height and width for the chart.
+- **Chart.js**: For standard charts quickly - simple bar/line/pie charts, basic dashboards. You must set a height and width for the chart
 - **Leaflet**: For maps and location features - travel itineraries, location analysis, geographic data
 - **Mermaid.js**: For diagrams and workflows - process flows, org charts, system architecture, decision trees
 - **Framer Motion**: For animations and interactions - smooth transitions, loading animations, hover effects, micro-interactions
@@ -712,46 +712,58 @@ export async function POST(request: NextRequest) {
               timestamp: Date.now()
             }
 
-            try {
-              const savedArtifact = await ConversationService.saveArtifact(
-                artifact,
-                currentConversationId, // Use conversationId instead of messageId
-                session?.user?.id
-              )
-
-              // If we didn't have a previous message ID, we need to create a new assistant message
-              if (!lastAssistantMessageId) {
-                await ConversationService.saveAssistantMessage(
-                  currentConversationId,
-                  artifactData.replacedContent,
-                  messageId,
-                  savedArtifact.id
-                )
-              }
-
-              console.log("🎨 API Route: Saved final artifact with hash-based ID", {
-                artifactId: savedArtifact.id,
-                artifactName: savedArtifact.name,
-                contentLength: artifactData.content.length,
-                conversationId: currentConversationId,
-                createdNewMessage: !lastAssistantMessageId
+            // Check if the artifact is already saved
+            const existingArtifact = await ConversationService.getArtifactById(artifactId)
+            if (existingArtifact) {
+              console.log("🎨 API Route: Artifact already saved", {
+                artifactId: existingArtifact.id,
+                artifactName: existingArtifact.name
               })
-            } catch (artifactError) {
-              console.warn("⚠️ API Route: Failed to save final artifact", artifactError)
+            } else {
+              try {
+                const savedArtifact = await ConversationService.saveArtifact(
+                  artifact,
+                  currentConversationId, // Use conversationId instead of messageId
+                  session?.user?.id
+                )
+
+                // If we didn't have a previous message ID, we need to create a new assistant message
+                if (!lastAssistantMessageId) {
+                  await ConversationService.saveAssistantMessage(
+                    currentConversationId,
+                    artifactData.replacedContent,
+                    messageId,
+                    savedArtifact.id
+                  )
+                }
+
+                console.log("🎨 API Route: Saved final artifact with hash-based ID", {
+                  artifactId: savedArtifact.id,
+                  artifactName: savedArtifact.name,
+                  contentLength: artifactData.content.length,
+                  conversationId: currentConversationId,
+                  createdNewMessage: !lastAssistantMessageId
+                })
+              } catch (artifactError) {
+                console.warn("⚠️ API Route: Failed to save final artifact", artifactError)
+              }
             }
           }
+
+          // Note: Assistant messages are now saved incrementally in onStepFinish for each step
+          // This prevents merging multiple assistant message chunks into one combined message
+          // Artifacts are saved separately and linked via API calls, not through message content
+          // Tool results are already saved incrementally in onStepFinish
+
+          console.log("💾 API Route: Assistant messages saved incrementally per step to prevent merging", {
+            conversationId: currentConversationId,
+            totalSteps: result.steps?.length || 0,
+            toolResultsCount: result.toolResults?.length || 0
+          })
         }
-
-        // Note: Assistant messages are now saved incrementally in onStepFinish for each step
-        // This prevents merging multiple assistant message chunks into one combined message
-        // Artifacts are saved separately and linked via API calls, not through message content
-        // Tool results are already saved incrementally in onStepFinish
-
-        console.log("💾 API Route: Assistant messages saved incrementally per step to prevent merging", {
-          conversationId: currentConversationId,
-          totalSteps: result.steps?.length || 0,
-          toolResultsCount: result.toolResults?.length || 0
-        })
+      },
+      onError: (error) => {
+        console.error("❌ API Route: Error", error)
       }
     })
 
