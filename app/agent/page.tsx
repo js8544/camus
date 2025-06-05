@@ -102,6 +102,14 @@ function AgentPageContent() {
 
   const loadConversation = async (conversationId: string) => {
     try {
+      // Abort any ongoing streaming request when switching conversations
+      if (abortControllerRef.current) {
+        console.log("🔄 Aborting ongoing request due to conversation switch")
+        abortControllerRef.current.abort()
+        abortControllerRef.current = null
+      }
+      setIsLoading(false)
+
       const response = await fetch(`/api/conversations/${conversationId}`)
       if (!response.ok) {
         throw new Error('Failed to load conversation')
@@ -324,6 +332,9 @@ function AgentPageContent() {
     // Generate unique ID for user message
     const userMessageId = `user-${Date.now()}-${Math.random()}`
 
+    // Capture the conversation ID at the start of the request to prevent cross-conversation updates
+    const requestConversationId = currentConversationId
+
     // Add user message to UI
     addMessage({ role: "user", content: userMessage, id: userMessageId })
     setInput("")
@@ -347,7 +358,7 @@ function AgentPageContent() {
         body: JSON.stringify({
           message: userMessage,
           conversationHistory,
-          conversationId: currentConversationId,
+          conversationId: requestConversationId,
           sessionId,
           userMessageId
         }),
@@ -356,18 +367,21 @@ function AgentPageContent() {
 
       // Check for credit error (403)
       if (response.status === 403) {
-        // Remove thinking message
-        setMessages(prev => prev.filter(msg => msg.role !== "thinking"))
+        // Only update if we're still in the same conversation
+        if (currentConversationId === requestConversationId) {
+          // Remove thinking message
+          setMessages(prev => prev.filter(msg => msg.role !== "thinking"))
 
-        const errorData = await response.json();
-        console.error("❌ Credit error:", errorData.error);
+          const errorData = await response.json();
+          console.error("❌ Credit error:", errorData.error);
 
-        // Add error message to the chat
-        addMessage({
-          role: "assistant",
-          content: "Not enough credits to start a new conversation. You'll get 5 more credits tomorrow, or earn more when your shared content reaches 100 views!",
-          isError: true
-        });
+          // Add error message to the chat
+          addMessage({
+            role: "assistant",
+            content: "Not enough credits to start a new conversation. You'll get 5 more credits tomorrow, or earn more when your shared content reaches 100 views!",
+            isError: true
+          });
+        }
 
         setIsLoading(false);
         return; // Stop execution here
@@ -375,18 +389,21 @@ function AgentPageContent() {
 
       // Check for conversation ID in response headers
       const responseConversationId = response.headers.get('x-conversation-id')
-      const finalConversationId = responseConversationId || currentConversationId
+      const finalConversationId = responseConversationId || requestConversationId
 
-      if (responseConversationId && !currentConversationId) {
-        setCurrentConversationId(responseConversationId)
-        // Trigger sidebar refresh when a new conversation is created
-        setRefreshTrigger(prev => prev + 1)
+      if (responseConversationId && !requestConversationId) {
+        // Only update if we're still in the same conversation context
+        if (currentConversationId === requestConversationId) {
+          setCurrentConversationId(responseConversationId)
+          // Trigger sidebar refresh when a new conversation is created
+          setRefreshTrigger(prev => prev + 1)
+        }
       }
 
       // Check if this was the first message in an existing conversation (title update case)
-      const isFirstMessage = currentConversationId && messages.filter(msg => msg.role === "user" || msg.role === "assistant").length === 0
+      const isFirstMessage = requestConversationId && messages.filter(msg => msg.role === "user" || msg.role === "assistant").length === 0
 
-      if (isFirstMessage) {
+      if (isFirstMessage && currentConversationId === requestConversationId) {
         // Trigger sidebar refresh after a short delay to allow title update to complete
         setTimeout(() => {
           setRefreshTrigger(prev => prev + 1)
@@ -397,8 +414,10 @@ function AgentPageContent() {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      // Remove thinking message
-      setMessages(prev => prev.filter(msg => msg.role !== "thinking"))
+      // Only remove thinking message if we're still in the same conversation
+      if (currentConversationId === requestConversationId) {
+        setMessages(prev => prev.filter(msg => msg.role !== "thinking"))
+      }
 
       // Handle streaming response
       const reader = response.body?.getReader()
@@ -419,10 +438,22 @@ function AgentPageContent() {
             break
           }
 
+          // Check if we're still in the same conversation before processing chunks
+          if (currentConversationId !== requestConversationId) {
+            console.log("🔄 Conversation switched during streaming, aborting stream processing")
+            break
+          }
+
           const chunk = decoder.decode(value)
           const lines = chunk.split('\n')
 
           for (const line of lines) {
+            // Double-check conversation ID before each update
+            if (currentConversationId !== requestConversationId) {
+              console.log("🔄 Conversation switched during line processing, stopping")
+              break
+            }
+
             if (line.startsWith('0:')) {
               // Text Part
               try {
@@ -464,7 +495,7 @@ function AgentPageContent() {
                 if (artifactStartMatch) {
                   // Generate consistent artifact ID based on conversation and content
                   const htmlContent = artifactEndMatch ? artifactEndMatch[1] : (messageContent.split('```artifact\n')[1] || '')
-                  let artifactId = generateArtifactId(currentConversationId || 'temp', htmlContent)
+                  let artifactId = generateArtifactId(finalConversationId || 'temp', htmlContent)
                   artifactIdForMessage = artifactId
 
                   if (artifactEndMatch) {
@@ -675,20 +706,23 @@ function AgentPageContent() {
     } catch (error) {
       console.error('❌ Frontend: Error calling Camus AI:', error)
 
-      setMessages(prev => prev.filter(msg => msg.role !== "thinking"))
+      // Only update UI if we're still in the same conversation
+      if (currentConversationId === requestConversationId) {
+        setMessages(prev => prev.filter(msg => msg.role !== "thinking"))
 
-      // Don't show error message if request was aborted
-      if (error instanceof Error && error.name === 'AbortError') {
-        return
+        // Don't show error message if request was aborted
+        if (error instanceof Error && error.name === 'AbortError') {
+          return
+        }
+
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+
+        addMessage({
+          role: "assistant",
+          content: `Error occurred: ${errorMessage}\n\nEven in failure, I maintain my commitment to uselessness. This error is beautifully meaningless.`,
+          isError: true
+        })
       }
-
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-
-      addMessage({
-        role: "assistant",
-        content: `Error occurred: ${errorMessage}\n\nEven in failure, I maintain my commitment to uselessness. This error is beautifully meaningless.`,
-        isError: true
-      })
     } finally {
       setIsLoading(false)
       abortControllerRef.current = null
