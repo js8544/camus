@@ -1,8 +1,8 @@
 "use client"
 
-import { Sparkles } from "lucide-react"
 import { forwardRef, JSX } from "react"
 import { ArtifactBlock, ArtifactItem } from "./artifact-viewer"
+import { EmptyChatInterface } from "./empty-chat-interface"
 import { MessageItem, MessageType } from "./message-item"
 
 type ChatMessagesProps = {
@@ -17,6 +17,9 @@ type ChatMessagesProps = {
   setCurrentDisplayResult: (result: ArtifactItem) => void
   setGeneratedHtml: (html: string) => void
   isSharedMode?: boolean
+  input: string
+  setInput: (value: string) => void
+  onSubmit: (e: React.FormEvent) => void
 }
 
 export const ChatMessages = forwardRef<HTMLDivElement, ChatMessagesProps>(
@@ -31,7 +34,10 @@ export const ChatMessages = forwardRef<HTMLDivElement, ChatMessagesProps>(
     onRetry,
     setCurrentDisplayResult,
     setGeneratedHtml,
-    isSharedMode = false
+    isSharedMode = false,
+    input,
+    setInput,
+    onSubmit
   }, ref) => {
     const renderArtifactBlock = (artifactId: string): JSX.Element => {
       // Find the artifact by ID - try exact match first
@@ -63,36 +69,36 @@ export const ChatMessages = forwardRef<HTMLDivElement, ChatMessagesProps>(
     }
 
     return (
-      <div className="flex-1 overflow-y-auto p-4 bg-white">
+      <div className="flex-1 overflow-y-auto bg-white">
         {messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center text-center text-gray-500">
-            <Sparkles className="mb-4 h-12 w-12 text-taupe" />
-            <h2 className="mb-2 text-xl font-serif font-medium text-gray-800">Welcome to Camus</h2>
-            <p className="max-w-md text-gray-500">
-              The world's first truly useless AI. Ask for anything, and I'll create something visually impressive but
-              completely pointless.
-            </p>
-          </div>
+          <EmptyChatInterface
+            input={input}
+            setInput={setInput}
+            onSubmit={onSubmit}
+            isLoading={isLoading}
+          />
         ) : (
-          messages.map((message, index) => (
-            <MessageItem
-              key={message.id || `message-${index}`}
-              message={message}
-              index={index}
-              isLoading={isLoading}
-              expandedThinking={expandedThinking}
-              onMessageClick={onMessageClick}
-              onToggleThinking={onToggleThinking}
-              onRetry={onRetry}
-              renderArtifactBlock={renderArtifactBlock}
-              isSharedMode={isSharedMode}
-              setCurrentDisplayResult={setCurrentDisplayResult}
-              setGeneratedHtml={setGeneratedHtml}
-              setIsFullscreen={() => { }}
-            />
-          ))
+          <div className="p-4">
+            {messages.map((message, index) => (
+              <MessageItem
+                key={message.id || `message-${index}`}
+                message={message}
+                index={index}
+                isLoading={isLoading}
+                expandedThinking={expandedThinking}
+                onMessageClick={onMessageClick}
+                onToggleThinking={onToggleThinking}
+                onRetry={onRetry}
+                renderArtifactBlock={renderArtifactBlock}
+                isSharedMode={isSharedMode}
+                setCurrentDisplayResult={setCurrentDisplayResult}
+                setGeneratedHtml={setGeneratedHtml}
+                setIsFullscreen={() => { }}
+              />
+            ))}
+            <div ref={ref} />
+          </div>
         )}
-        <div ref={ref} />
       </div>
     )
   }

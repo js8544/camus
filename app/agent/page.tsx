@@ -837,7 +837,7 @@ function AgentPageContent() {
 
       <div className="flex h-screen">
         {/* Left Half: Sidebar + Chat */}
-        <div className="flex w-1/2 h-full min-w-0">
+        <div className={`flex ${messages.length === 0 ? 'w-full' : 'w-1/2'} h-full min-w-0`}>
           {/* Sidebar */}
           <ChatSidebar
             onNewChat={handleNewChat}
@@ -848,30 +848,32 @@ function AgentPageContent() {
 
           {/* Chat Section */}
           <div ref={chatContainerRef} className="flex h-full flex-1 flex-col border-r border-gray-300 min-w-0">
-            {/* Chat Header */}
-            <div className="border-b border-gray-300 bg-white p-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <h1 className="text-lg font-serif font-medium text-gray-800">AI Interface</h1>
+            {/* Chat Header - Only show when there are messages */}
+            {messages.length > 0 && (
+              <div className="border-b border-gray-300 bg-white p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <h1 className="text-lg font-serif font-medium text-gray-800">AI Interface</h1>
+                    {currentConversationId && (
+                      <span className="ml-3 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        {currentConversationId.slice(0, 8)}...
+                      </span>
+                    )}
+                  </div>
                   {currentConversationId && (
-                    <span className="ml-3 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      {currentConversationId.slice(0, 8)}...
-                    </span>
+                    <Button
+                      onClick={handleShareConversation}
+                      variant="outline"
+                      size="sm"
+                      className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                    >
+                      <Share2 className="h-4 w-4 mr-2" />
+                      Share
+                    </Button>
                   )}
                 </div>
-                {currentConversationId && (
-                  <Button
-                    onClick={handleShareConversation}
-                    variant="outline"
-                    size="sm"
-                    className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
-                  >
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share
-                  </Button>
-                )}
               </div>
-            </div>
+            )}
 
             {/* Messages */}
             <ChatMessages
@@ -886,35 +888,42 @@ function AgentPageContent() {
               onRetry={handleRetry}
               setCurrentDisplayResult={setCurrentDisplayResult}
               setGeneratedHtml={setGeneratedHtml}
-            />
-
-            {/* Input */}
-            <ChatInput
               input={input}
               setInput={setInput}
               onSubmit={handleSubmit}
-              onStop={handleStop}
-              isLoading={isLoading}
             />
+
+            {/* Input - Only show when there are messages */}
+            {messages.length > 0 && (
+              <ChatInput
+                input={input}
+                setInput={setInput}
+                onSubmit={handleSubmit}
+                onStop={handleStop}
+                isLoading={isLoading}
+              />
+            )}
           </div>
         </div>
 
-        {/* Right Half: Results Panel */}
-        <div className="w-1/2 h-full min-w-0">
-          <ResultsPanel
-            currentDisplayResult={currentDisplayResult}
-            streamingArtifact={streamingArtifact}
-            toolResults={toolResults}
-            artifacts={artifacts}
-            artifactViewMode={artifactViewMode}
-            setArtifactViewMode={setArtifactViewMode}
-            setIsFullscreen={setIsFullscreen}
-            showDropdown={showDropdown}
-            setShowDropdown={setShowDropdown}
-            setCurrentDisplayResult={setCurrentDisplayResult}
-            setGeneratedHtml={setGeneratedHtml}
-          />
-        </div>
+        {/* Right Half: Results Panel - Only show when there are messages */}
+        {messages.length > 0 && (
+          <div className="w-1/2 h-full min-w-0">
+            <ResultsPanel
+              currentDisplayResult={currentDisplayResult}
+              streamingArtifact={streamingArtifact}
+              toolResults={toolResults}
+              artifacts={artifacts}
+              artifactViewMode={artifactViewMode}
+              setArtifactViewMode={setArtifactViewMode}
+              setIsFullscreen={setIsFullscreen}
+              showDropdown={showDropdown}
+              setShowDropdown={setShowDropdown}
+              setCurrentDisplayResult={setCurrentDisplayResult}
+              setGeneratedHtml={setGeneratedHtml}
+            />
+          </div>
+        )}
 
         {/* Fullscreen Modal */}
         {isFullscreen && currentDisplayResult && 'content' in currentDisplayResult && (

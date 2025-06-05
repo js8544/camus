@@ -400,6 +400,9 @@ export default function SharedConversationPage() {
               setCurrentDisplayResult={setCurrentDisplayResult}
               setGeneratedHtml={setGeneratedHtml}
               isSharedMode={true} // Add this prop to disable retry buttons
+              input=""
+              setInput={() => { }} // Dummy - not used in shared mode
+              onSubmit={() => { }} // Dummy - not used in shared mode
             />
           </div>
         </div>
