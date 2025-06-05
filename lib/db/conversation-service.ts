@@ -1,3 +1,4 @@
+import { generateArtifactMetadata } from "@/lib/ai"
 import { prisma } from "@/lib/prisma"
 import { ArtifactType, MessageRole } from "@prisma/client"
 
@@ -433,6 +434,12 @@ export class ConversationService {
         }
       })
 
+      // Generate metadata asynchronously (don't block the response)
+      this.generateArtifactMetadataAsync(savedArtifact.id, artifact.name, artifact.content)
+        .catch(error => {
+          console.error("❌ Failed to generate artifact metadata:", error)
+        })
+
       // Convert BigInt back to number for API response
       return {
         ...savedArtifact,
@@ -441,6 +448,43 @@ export class ConversationService {
     } catch (error) {
       console.error("Error saving artifact:", error)
       throw new Error("Failed to save artifact")
+    }
+  }
+
+  // Generate and save artifact metadata (runs asynchronously)
+  static async generateArtifactMetadataAsync(
+    artifactId: string,
+    artifactName: string,
+    artifactContent: string
+  ) {
+    try {
+      console.log("🎯 Generating metadata for artifact:", { artifactId, artifactName: artifactName.substring(0, 50) })
+
+      // Generate metadata using AI
+      const metadata = await generateArtifactMetadata(artifactName, artifactContent)
+
+      console.log("✅ Generated artifact metadata:", {
+        artifactId,
+        displayTitle: metadata.displayTitle,
+        category: metadata.category,
+        hasPreviewImage: !!metadata.previewImageUrl
+      })
+
+      // Update the artifact with generated metadata
+      await prisma.artifact.update({
+        where: { id: artifactId },
+        data: {
+          displayTitle: metadata.displayTitle,
+          displayDescription: metadata.displayDescription,
+          category: metadata.category,
+          previewImageUrl: metadata.previewImageUrl
+        }
+      })
+
+      console.log("💾 Saved artifact metadata to database:", { artifactId })
+    } catch (error) {
+      console.error("❌ Error generating artifact metadata:", error)
+      // Don't throw - this shouldn't break the main flow
     }
   }
 
@@ -890,6 +934,96 @@ export class ConversationService {
     } catch (error) {
       console.error("Error unsharing artifact:", error)
       throw new Error("Failed to unshare artifact")
+    }
+  }
+
+  // Get public artifacts with metadata for frontpage display
+  static async getPublicArtifactsWithMetadata(
+    limit: number = 20,
+    offset: number = 0,
+    category?: string
+  ) {
+    try {
+      const whereClause: any = {
+        isPublic: true,
+        displayTitle: { not: null } // Only show artifacts that have generated metadata
+      }
+
+      if (category) {
+        whereClause.category = category
+      }
+
+      const artifacts = await prisma.artifact.findMany({
+        where: whereClause,
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+              image: true
+            }
+          },
+          conversation: {
+            select: {
+              id: true,
+              title: true
+            }
+          }
+        }
+      })
+
+      return artifacts.map(artifact => ({
+        id: artifact.id,
+        name: artifact.name,
+        displayTitle: artifact.displayTitle,
+        displayDescription: artifact.displayDescription,
+        category: artifact.category,
+        previewImageUrl: artifact.previewImageUrl,
+        views: artifact.views,
+        createdAt: artifact.createdAt.toISOString(),
+        timestamp: Number(artifact.timestamp),
+        shareSlug: artifact.shareSlug,
+        user: artifact.user,
+        conversation: artifact.conversation
+      }))
+    } catch (error) {
+      console.error("Error fetching public artifacts with metadata:", error)
+      throw new Error("Failed to fetch public artifacts")
+    }
+  }
+
+  // Get artifact categories for filtering
+  static async getArtifactCategories() {
+    try {
+      const categories = await prisma.artifact.groupBy({
+        by: ['category'],
+        where: {
+          isPublic: true,
+          category: { not: null }
+        },
+        _count: {
+          category: true
+        },
+        orderBy: {
+          _count: {
+            category: 'desc'
+          }
+        }
+      })
+
+      return categories
+        .filter(cat => cat.category !== null)
+        .map(cat => ({
+          name: cat.category!,
+          count: cat._count.category
+        }))
+    } catch (error) {
+      console.error("Error fetching artifact categories:", error)
+      throw new Error("Failed to fetch artifact categories")
     }
   }
 } 

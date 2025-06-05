@@ -513,3 +513,62 @@ export const generateAITitle = traceable(
   },
   { name: "generate_ai_title" }
 )
+
+// Generate artifact metadata for frontpage display
+export const generateArtifactMetadata = traceable(
+  async function generateArtifactMetadata(
+    artifactName: string,
+    artifactContent: string
+  ): Promise<{
+    displayTitle: string
+    displayDescription: string
+    category: string
+    previewImageUrl: string | null
+  }> {
+    try {
+      const schema = z.object({
+        displayTitle: z.string().describe("A catchy, short title (2-6 words) for frontpage display"),
+        displayDescription: z.string().describe("A brief, engaging description (10-20 words) highlighting what this artifact does and why it's useful"),
+        category: z.string().describe("A single category that best describes this artifact: Education, Business, Game, Productivity, Lifestyle, Literature, Research"),
+        previewImageUrl: z.string().nullable().describe("Choose the best image URL from the HTML content for preview. Return null if no suitable images found. Avoid icons, logos, avatars - prefer content images, photos, or illustrations.")
+      })
+
+      const result = await traceableStructuredGeneration(
+        `You are an expert at creating compelling titles and descriptions for web pages and selecting the best preview images.
+        
+        Analyze the provided HTML content and generate metadata that would make it appealing for discovery on a frontpage.
+        
+        Guidelines:
+        - displayTitle: Should be catchy and descriptive, like "Tokyo Food Adventure" or "Startup Pitch Analyzer"
+        - displayDescription: Should highlight the absurdity and funny parts, make it sound fun and interesting. Don't say it's an artifact, say "A travel plan featuring unexpected places and activities", "A pitch of Tesla's new car that doesn't drive", "A out-of-office email reply featuring queuing for reply and beaucratic forms".
+        - category: Choose the most fitting single category from the provided options: Education, Business, Game, Productivity, Lifestyle (Travel plan is part of Lifestyle), Literature, Research, Other
+        - previewImageUrl: Analyze ALL img tags in the HTML and choose the most suitable one for preview. Prefer larger content images over icons/logos/avatars. Return null if no good images.
+        
+        The artifact should sound professional and useful, even if the content is satirical or absurd.`,
+        `Artifact Name: ${artifactName}
+        
+        Full HTML Content:
+        ${artifactContent}`,
+        schema
+      )
+
+      return result as {
+        displayTitle: string
+        displayDescription: string
+        category: string
+        previewImageUrl: string | null
+      }
+    } catch (error) {
+      console.error('Error generating artifact metadata:', error)
+
+      // Fallback metadata
+      return {
+        displayTitle: artifactName.substring(0, 50),
+        displayDescription: `An interactive artifact featuring ${artifactName.toLowerCase()}. Explore this unique creation with custom functionality and design.`,
+        category: "Productivity",
+        previewImageUrl: null
+      }
+    }
+  },
+  { name: "generate_artifact_metadata" }
+)

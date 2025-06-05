@@ -44,4 +44,50 @@ export function extractArtifactFromMessage(content: string) {
     return artifactMatch[1]
   }
   return null
+}
+
+/**
+ * Extract the first suitable image URL from HTML content
+ * Prioritizes larger images and avoids icons/avatars
+ */
+export function extractPreviewImageUrl(htmlContent: string): string | null {
+  try {
+    // Simple regex to find img tags with src attributes
+    const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi
+    const matches = Array.from(htmlContent.matchAll(imgRegex))
+
+    if (matches.length === 0) {
+      return null
+    }
+
+    // Filter out likely icons, avatars, or very small images
+    const suitableImages = matches
+      .map(match => match[1])
+      .filter(src => {
+        const lowerSrc = src.toLowerCase()
+        // Skip common icon/avatar patterns
+        if (lowerSrc.includes('icon') ||
+          lowerSrc.includes('avatar') ||
+          lowerSrc.includes('logo') ||
+          lowerSrc.includes('favicon') ||
+          lowerSrc.includes('16x16') ||
+          lowerSrc.includes('32x32') ||
+          lowerSrc.includes('48x48')) {
+          return false
+        }
+        // Prefer common image formats
+        return lowerSrc.includes('.jpg') ||
+          lowerSrc.includes('.jpeg') ||
+          lowerSrc.includes('.png') ||
+          lowerSrc.includes('.webp') ||
+          lowerSrc.includes('unsplash') ||
+          lowerSrc.includes('blob.vercel-storage.com')
+      })
+
+    // Return the first suitable image, or fallback to first image if none found
+    return suitableImages[0] || matches[0][1] || null
+  } catch (error) {
+    console.error('Error extracting preview image URL:', error)
+    return null
+  }
 } 

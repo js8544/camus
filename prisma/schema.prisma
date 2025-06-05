@@ -156,20 +156,24 @@ model ToolResult {
 }
 
 model Artifact {
-  id             String       @id @default(cuid())
-  name           String // Changed from title to match frontend
-  description    String?
-  type           ArtifactType @default(HTML)
-  content        String // HTML, markdown, or other content
-  timestamp      BigInt // Unix timestamp to match frontend - changed from Int to BigInt for JS timestamps
-  metadata       Json? // Additional metadata about the artifact
-  conversationId String? // Conversation that contains this artifact (removed messageId)
-  userId         String? // Creator (could be null for anonymous)
-  isPublic       Boolean      @default(false)
-  shareSlug      String?      @unique // For public sharing URLs
-  views          Int          @default(0)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id                 String       @id @default(cuid())
+  name               String // Changed from title to match frontend
+  description        String?
+  displayTitle       String? // AI-generated short title for frontpage
+  displayDescription String? // AI-generated description for frontpage
+  category           String? // AI-determined category
+  previewImageUrl    String? // URL extracted from artifact content
+  type               ArtifactType @default(HTML)
+  content            String // HTML, markdown, or other content
+  timestamp          BigInt // Unix timestamp to match frontend - changed from Int to BigInt for JS timestamps
+  metadata           Json? // Additional metadata about the artifact
+  conversationId     String? // Conversation that contains this artifact (removed messageId)
+  userId             String? // Creator (could be null for anonymous)
+  isPublic           Boolean      @default(false)
+  shareSlug          String?      @unique // For public sharing URLs
+  views              Int          @default(0)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 
   // Relations - removed message relation, kept conversation relation
   conversation Conversation?     @relation(fields: [conversationId], references: [id], onDelete: SetNull)
