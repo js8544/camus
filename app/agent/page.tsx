@@ -93,7 +93,6 @@ function AgentPageContent() {
   useEffect(() => {
     const conversationId = searchParams.get('c')
     if (conversationId && conversationId !== currentConversationId) {
-      console.log("🔗 Loading conversation from URL:", conversationId)
       loadConversation(conversationId)
       // Update the current conversation ID and trigger sidebar refresh
       setCurrentConversationId(conversationId)
@@ -103,15 +102,12 @@ function AgentPageContent() {
 
   const loadConversation = async (conversationId: string) => {
     try {
-      console.log("🔄 Loading conversation:", conversationId)
-
       const response = await fetch(`/api/conversations/${conversationId}`)
       if (!response.ok) {
         throw new Error('Failed to load conversation')
       }
 
       const data = await response.json()
-      console.log("✅ Loaded conversation data:", data)
 
       // Reset current state
       resetChat()
@@ -172,11 +168,6 @@ function AgentPageContent() {
         })
 
         setMessages(processedMessages)
-        console.log(" Processed messages with think/artifact blocks:", {
-          total: processedMessages.length,
-          withThinking: processedMessages.filter((m: any) => m.thinkingContent).length,
-          withArtifacts: processedMessages.filter((m: any) => m.artifactId).length
-        })
       }
 
       // Load tool results
@@ -196,10 +187,6 @@ function AgentPageContent() {
         const lastArtifact = allArtifacts[allArtifacts.length - 1]
         setCurrentDisplayResult(lastArtifact)
         setGeneratedHtml(lastArtifact.content)
-        console.log("🎭 Loaded artifacts:", {
-          total: allArtifacts.length,
-          lastArtifact: lastArtifact.name
-        })
       }
 
     } catch (error) {
@@ -209,7 +196,6 @@ function AgentPageContent() {
   }
 
   const handleNewChat = async () => {
-    console.log("🆕 Starting new chat")
     resetChat()
 
     // Clear conversation ID from URL first
@@ -252,8 +238,6 @@ function AgentPageContent() {
       const data = await response.json()
       const newConversationId = data.conversation.id
 
-      console.log("✅ Created new conversation:", newConversationId)
-
       // Set the new conversation as current
       setCurrentConversationId(newConversationId)
 
@@ -289,13 +273,6 @@ function AgentPageContent() {
 
         // Only save if there's actual content to preserve
         if (content.trim()) {
-          console.log("💾 Frontend: Saving incomplete message due to abort", {
-            messageId,
-            contentLength: content.length,
-            hasArtifact: !!artifactId,
-            hasThinking: !!thinkingContent
-          })
-
           // Clean content for database storage - remove thinking blocks and artifact references
           let cleanedContent = content
           cleanedContent = cleanedContent.replace(/```think\n[\s\S]*?\n```/g, '').trim()
@@ -343,7 +320,6 @@ function AgentPageContent() {
     if (!input.trim() || isLoading) return
 
     const userMessage = input.trim()
-    console.log("🎭 Frontend: Starting request", { userMessage, currentConversationId })
 
     // Generate unique ID for user message
     const userMessageId = `user-${Date.now()}-${Math.random()}`
@@ -359,7 +335,6 @@ function AgentPageContent() {
 
       // Get conversation history for context
       const conversationHistory = messages.filter(msg => msg.role === "user" || msg.role === "assistant")
-      console.log("📝 Frontend: Conversation history", { historyLength: conversationHistory.length })
 
       // Create abort controller for this request
       abortControllerRef.current = new AbortController()
@@ -378,8 +353,6 @@ function AgentPageContent() {
         }),
         signal: abortControllerRef.current.signal
       })
-
-      console.log("📡 Frontend: Response received", { status: response.status, ok: response.ok })
 
       // Check for credit error (403)
       if (response.status === 403) {
@@ -405,7 +378,6 @@ function AgentPageContent() {
       const finalConversationId = responseConversationId || currentConversationId
 
       if (responseConversationId && !currentConversationId) {
-        console.log("🆔 Setting conversation ID from response:", responseConversationId)
         setCurrentConversationId(responseConversationId)
         // Trigger sidebar refresh when a new conversation is created
         setRefreshTrigger(prev => prev + 1)
@@ -415,7 +387,6 @@ function AgentPageContent() {
       const isFirstMessage = currentConversationId && messages.filter(msg => msg.role === "user" || msg.role === "assistant").length === 0
 
       if (isFirstMessage) {
-        console.log("📝 First message sent to existing conversation, triggering sidebar refresh for title update")
         // Trigger sidebar refresh after a short delay to allow title update to complete
         setTimeout(() => {
           setRefreshTrigger(prev => prev + 1)
@@ -432,7 +403,6 @@ function AgentPageContent() {
       // Handle streaming response
       const reader = response.body?.getReader()
       const decoder = new TextDecoder()
-      console.log("🔄 Frontend: Starting stream reading", { hasReader: !!reader })
 
       let currentTextBuffer = ""
       let currentToolResults: any[] = []
@@ -444,15 +414,12 @@ function AgentPageContent() {
         while (true) {
           const { done, value } = await reader.read()
           chunkCount++
-          console.log(`📦 Frontend: Chunk ${chunkCount}`, { done, valueLength: value?.length })
 
           if (done) {
-            console.log("✅ Frontend: Stream reading completed")
             break
           }
 
           const chunk = decoder.decode(value)
-          console.log(`🧩 Frontend: Decoded chunk ${chunkCount}`, { chunk })
           const lines = chunk.split('\n')
 
           for (const line of lines) {
@@ -581,7 +548,6 @@ function AgentPageContent() {
                 })
 
               } catch (parseError) {
-                console.log('⚠️ Frontend: Parse error for text part:', parseError)
                 // Handle raw text fallback similar to above
               }
             } else if (line.startsWith('b:')) {
@@ -605,7 +571,7 @@ function AgentPageContent() {
                 }
                 addMessage(toolMessage)
               } catch (parseError) {
-                console.log('⚠️ Frontend: Parse error for tool call streaming start:', parseError)
+                // Handle parse error silently
               }
             } else if (line.startsWith('9:')) {
               // Tool Call Part
@@ -647,7 +613,7 @@ function AgentPageContent() {
                   return newMessages
                 })
               } catch (parseError) {
-                console.log('⚠️ Frontend: Parse error for tool call:', parseError)
+                // Handle parse error silently
               }
             } else if (line.startsWith('a:')) {
               // Tool Result Part
@@ -686,7 +652,7 @@ function AgentPageContent() {
                 }
 
               } catch (parseError) {
-                console.log('⚠️ Frontend: Parse error for tool result:', parseError)
+                // Handle parse error silently
               }
             } else if (line.startsWith('3:')) {
               // Error Part
@@ -699,7 +665,7 @@ function AgentPageContent() {
                   isError: true
                 })
               } catch (parseError) {
-                console.log('⚠️ Frontend: Parse error for error part:', parseError)
+                // Handle parse error silently
               }
             }
           }
@@ -745,8 +711,6 @@ function AgentPageContent() {
       const firstUserMessage = messages.find(msg => msg.role === "user")
 
       if (firstUserMessage) {
-        console.log("🔄 Retrying with first user message for credit check:", firstUserMessage.content)
-
         // Clear all messages and reset state
         resetChat()
 
@@ -843,17 +807,6 @@ function AgentPageContent() {
           timestamp: Date.now()
         }
         allArtifacts.push(foundArtifact)
-        console.log("📦 Created artifact with hash-based ID:", {
-          messageId: message.id,
-          artifactId: artifactId,
-          artifactName: foundArtifact.name
-        })
-      } else {
-        console.log("🔗 Found existing artifact with hash-based ID:", {
-          messageId: message.id,
-          artifactId: foundArtifact.id,
-          artifactName: foundArtifact.name
-        })
       }
 
       content = content.replace(/```artifact\n[\s\S]*?\n```/g, '[Artifact generated - view in right panel]')
