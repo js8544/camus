@@ -1,5 +1,6 @@
 "use client"
 
+import { generateArtifactId } from '@/lib/artifact-utils'
 import { useEffect, useState } from 'react'
 
 export interface MessageType {
@@ -93,38 +94,18 @@ export function useAgentChat() {
 
   // Consolidated artifact processing function
   const processArtifactInMessage = (message: MessageType) => {
-    if (message.role === "assistant" && message.content) {
+    if (message.role === "assistant" && message.content.includes("```artifact")) {
+      // Extract the artifact content  
       const artifactMatch = message.content.match(/```artifact\n([\s\S]*?)\n```/)
       if (artifactMatch) {
         const htmlContent = artifactMatch[1]
-        // Removed console.log statement
 
-        // Check if this artifact content already exists
-        const existingArtifact = artifacts.find(a => a.content === htmlContent)
-        if (existingArtifact) {
-          // Use existing artifact instead of creating duplicate
-          setCurrentDisplayResult(existingArtifact)
-          setGeneratedHtml(existingArtifact.content)
-          return
-        }
+        // Only create artifact if we have an artifactId from backend OR generate consistent ID
+        const artifactId = message.artifactId || generateArtifactId('temp', htmlContent)
 
-        // Only create artifact if we have an artifactId from backend
-        if (message.artifactId) {
+        if (artifactId) {
           const artifact: ArtifactItem = {
-            id: message.artifactId, // Use backend-provided ID (which is now message ID)
-            name: generateUniqueArtifactName(extractHtmlTitle(htmlContent)),
-            content: htmlContent,
-            timestamp: Date.now()
-          }
-
-          setArtifacts(prev => [...prev, artifact])
-          setGeneratedHtml(htmlContent)
-          setCurrentDisplayResult(artifact)
-        } else {
-          // Fallback: use message ID if backend doesn't provide artifactId
-          const artifactId = message.id || `temp-${Date.now()}`
-          const artifact: ArtifactItem = {
-            id: artifactId, // Use message ID as artifact ID
+            id: artifactId,
             name: generateUniqueArtifactName(extractHtmlTitle(htmlContent)),
             content: htmlContent,
             timestamp: Date.now()

@@ -12,6 +12,7 @@ import { ShareModal } from "@/components/ShareModal"
 import { Button } from "@/components/ui/button"
 import { CreditMilestoneNotification } from "@/components/user/CreditMilestoneNotification"
 import { useAgentChat } from "@/hooks/use-agent-chat"
+import { extractHtmlTitle, generateArtifactId } from "@/lib/artifact-utils"
 import { Share2 } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useRef, useState } from "react"
@@ -70,7 +71,6 @@ function AgentPageContent() {
     streamingArtifact,
     setStreamingArtifact,
     expandedThinking,
-    extractHtmlTitle,
     generateUniqueArtifactName,
     generateDisplayName,
     addMessage,
@@ -172,7 +172,7 @@ function AgentPageContent() {
         })
 
         setMessages(processedMessages)
-        console.log("�� Processed messages with think/artifact blocks:", {
+        console.log(" Processed messages with think/artifact blocks:", {
           total: processedMessages.length,
           withThinking: processedMessages.filter((m: any) => m.thinkingContent).length,
           withArtifacts: processedMessages.filter((m: any) => m.artifactId).length
@@ -495,15 +495,15 @@ function AgentPageContent() {
                 const artifactEndMatch = messageContent.match(/```artifact\n([\s\S]*?)\n```/)
 
                 if (artifactStartMatch) {
-                  // Use the current message ID as the artifact ID
-                  let artifactId = streamingArtifact?.id || currentMessageId
+                  // Generate consistent artifact ID based on conversation and content
+                  const htmlContent = artifactEndMatch ? artifactEndMatch[1] : (messageContent.split('```artifact\n')[1] || '')
+                  let artifactId = generateArtifactId(currentConversationId || 'temp', htmlContent)
                   artifactIdForMessage = artifactId
 
                   if (artifactEndMatch) {
                     // Complete artifact
-                    const htmlContent = artifactEndMatch[1]
                     const artifact = {
-                      id: artifactId, // This is now the message ID
+                      id: artifactId,
                       name: generateUniqueArtifactName(extractHtmlTitle(htmlContent)),
                       content: htmlContent,
                       timestamp: streamingArtifact?.timestamp || Date.now()
@@ -523,10 +523,10 @@ function AgentPageContent() {
 
                     messageContent = messageContent.replace(/```artifact\n[\s\S]*?\n```/, '[Artifact generated - view in right panel]')
                   } else {
-                    // Streaming artifact
+                    // Streaming artifact - use partial content for now, will update when complete
                     const partialContent = messageContent.split('```artifact\n')[1] || ''
                     const artifact = {
-                      id: artifactId, // This is now the message ID
+                      id: artifactId,
                       name: streamingArtifact?.name || `Streaming...`,
                       content: partialContent,
                       timestamp: streamingArtifact?.timestamp || Date.now()
@@ -795,28 +795,28 @@ function AgentPageContent() {
     if (artifactMatch) {
       const htmlContent = artifactMatch[1]
 
-      // Use the message ID as the artifact ID
-      artifactId = message.id
+      // Generate consistent artifact ID based on conversation and content
+      artifactId = generateArtifactId(currentConversationId || 'temp', htmlContent)
 
-      // Find existing artifact by ID (message ID) or create new one
+      // Find existing artifact by ID or create new one
       let foundArtifact = allArtifacts.find(a => a.id === artifactId)
 
       if (!foundArtifact) {
-        // Create new artifact using message ID
+        // Create new artifact using hash-based ID
         foundArtifact = {
-          id: artifactId, // Use message ID as artifact ID
+          id: artifactId,
           name: extractHtmlTitle(htmlContent) || 'Untitled',
           content: htmlContent,
           timestamp: Date.now()
         }
         allArtifacts.push(foundArtifact)
-        console.log("📦 Created artifact from message:", {
+        console.log("📦 Created artifact with hash-based ID:", {
           messageId: message.id,
           artifactId: artifactId,
           artifactName: foundArtifact.name
         })
       } else {
-        console.log("🔗 Found existing artifact for message:", {
+        console.log("🔗 Found existing artifact with hash-based ID:", {
           messageId: message.id,
           artifactId: foundArtifact.id,
           artifactName: foundArtifact.name

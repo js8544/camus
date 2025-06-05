@@ -81,20 +81,21 @@ model Session {
 
 model Conversation {
   id          String   @id @default(cuid())
-  title       String?
+  title       String
   userId      String?
-  sessionId   String?
+  sessionId   String? // For anonymous users
   isCompleted Boolean  @default(false)
   isPublic    Boolean  @default(false)
-  shareSlug   String?  @unique
+  shareSlug   String?  @unique // For public sharing URLs
   views       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
-  user     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  session  Session?  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  messages Message[]
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  messages  Message[]
+  artifacts Artifact[] // Added artifacts relation
+  Session   Session?   @relation(fields: [sessionId], references: [id])
 
   @@map("conversations")
 }
@@ -104,21 +105,21 @@ model Message {
   conversationId  String
   role            MessageRole
   content         String
-  toolName        String? // For tool messages
-  imageUrl        String? // For messages with images
-  toolResultId    String? // Reference to tool result
-  toolCallId      String? // For tracking tool calls
-  artifactId      String? // Reference to artifact
-  thinkingContent String? // For thinking blocks
+  toolName        String?
+  imageUrl        String?
+  toolResultId    String?
+  toolCallId      String?
+  artifactId      String? // Keep this for reference but no FK constraint
+  thinkingContent String?
   isError         Boolean     @default(false)
-  isIncomplete    Boolean     @default(false) // For messages that were aborted/interrupted
-  metadata        Json? // Store additional data like model used, tokens, etc.
+  isIncomplete    Boolean     @default(false)
+  metadata        Json?
   createdAt       DateTime    @default(now())
 
-  // Relations
+  // Relations - removed artifacts relation
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  toolCalls    ToolCall[]
-  artifacts    Artifact[]
+  ToolCall     ToolCall[]
+  Artifact     Artifact[]
 
   @@map("messages")
 }
@@ -155,26 +156,28 @@ model ToolResult {
 }
 
 model Artifact {
-  id          String       @id @default(cuid())
-  name        String // Changed from title to match frontend
-  description String?
-  type        ArtifactType @default(HTML)
-  content     String // HTML, markdown, or other content
-  timestamp   BigInt // Unix timestamp to match frontend - changed from Int to BigInt for JS timestamps
-  metadata    Json? // Additional metadata about the artifact
-  messageId   String? // Message that generated this artifact
-  userId      String? // Creator (could be null for anonymous)
-  isPublic    Boolean      @default(false)
-  shareSlug   String?      @unique // For public sharing URLs
-  views       Int          @default(0)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id             String       @id @default(cuid())
+  name           String // Changed from title to match frontend
+  description    String?
+  type           ArtifactType @default(HTML)
+  content        String // HTML, markdown, or other content
+  timestamp      BigInt // Unix timestamp to match frontend - changed from Int to BigInt for JS timestamps
+  metadata       Json? // Additional metadata about the artifact
+  conversationId String? // Conversation that contains this artifact (removed messageId)
+  userId         String? // Creator (could be null for anonymous)
+  isPublic       Boolean      @default(false)
+  shareSlug      String?      @unique // For public sharing URLs
+  views          Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  // Relations
-  message  Message?          @relation(fields: [messageId], references: [id], onDelete: SetNull)
-  user     User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
-  versions ArtifactVersion[]
-  tags     ArtifactTag[]
+  // Relations - removed message relation, kept conversation relation
+  conversation Conversation?     @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  user         User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  versions     ArtifactVersion[]
+  tags         ArtifactTag[]
+  Message      Message?          @relation(fields: [messageId], references: [id])
+  messageId    String?
 
   @@map("artifacts")
 }

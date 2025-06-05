@@ -1,62 +1,79 @@
+import { extractArtifactFromMessage, extractHtmlTitle } from "@/lib/artifact-utils"
 import { prisma } from "@/lib/prisma"
 import { NextRequest, NextResponse } from "next/server"
-
-// Helper function to extract artifact from message content
-const extractArtifactFromMessage = (content: string) => {
-  const artifactMatch = content.match(/```artifact\n([\s\S]*?)\n```/)
-  if (artifactMatch) {
-    return artifactMatch[1]
-  }
-  return null
-}
-
-// Helper function to extract HTML title
-const extractHtmlTitle = (html: string): string => {
-  const titleMatch = html.match(/<title>(.*?)<\/title>/)
-  if (titleMatch && titleMatch[1]) {
-    return titleMatch[1]
-  }
-  const h1Match = html.match(/<h1>(.*?)<\/h1>/)
-  if (h1Match && h1Match[1]) {
-    return h1Match[1]
-  }
-  return 'Generated Artifact'
-}
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: messageId } = await params
+    const { id } = await params
 
-    console.log("🔗 Share API: Attempting to share artifact from message", { messageId })
+    console.log("🔗 Share API: Attempting to share artifact", { id })
 
-    // Find the message containing the artifact
-    const message = await prisma.message.findUnique({
-      where: { id: messageId }
+    // First, try to find the artifact directly by ID (hash-based ID)
+    let artifact = await prisma.artifact.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            image: true
+          }
+        }
+      }
     })
 
-    if (!message) {
-      throw new Error(`Message with ID ${messageId} not found`)
+    let artifactContent: string
+    let messageId: string
+
+    if (artifact) {
+      // Found artifact directly
+      artifactContent = artifact.content
+      messageId = id // Use the artifact ID as the message ID for URL compatibility
+      console.log("✅ Share API: Found artifact directly", {
+        artifactId: artifact.id,
+        conversationId: artifact.conversationId,
+        artifactTitle: artifact.name
+      })
+    } else {
+      // Fallback: try to find by message ID (for backward compatibility)
+      console.log("🔄 Share API: Artifact not found directly, trying as message ID", { id })
+
+      const message = await prisma.message.findUnique({
+        where: { id }
+      })
+
+      if (!message) {
+        throw new Error(`Neither artifact nor message with ID ${id} found`)
+      }
+
+      // Extract artifact content from message
+      const extractedContent = extractArtifactFromMessage(message.content)
+
+      if (!extractedContent) {
+        throw new Error(`No artifact found in message ${id}`)
+      }
+
+      artifactContent = extractedContent
+      messageId = message.id
+      console.log("✅ Share API: Extracted artifact from message", {
+        messageId: messageId,
+        artifactTitle: extractHtmlTitle(extractedContent)
+      })
     }
 
-    // Extract artifact content from message
-    const artifactContent = extractArtifactFromMessage(message.content)
-
-    if (!artifactContent) {
-      throw new Error(`No artifact found in message ${messageId}`)
-    }
-
-    // Generate the share URL using message ID directly
+    // Generate the share URL using the original ID (could be artifact ID or message ID)
     const baseUrl = process.env.NODE_ENV === 'production'
       ? process.env.NEXTAUTH_URL || `https://${request.headers.get('host')}`
       : `http://${request.headers.get('host')}`
 
-    const shareUrl = `${baseUrl}/shared/artifact/${messageId}`
+    const shareUrl = `${baseUrl}/shared/artifact/${id}`
 
     console.log("✅ Share API: Successfully created share link", {
-      messageId,
+      id,
       shareUrl,
       artifactTitle: extractHtmlTitle(artifactContent)
     })
@@ -66,7 +83,7 @@ export async function POST(
       shareUrl,
       messageId,
       artifact: {
-        id: messageId, // Use message ID as artifact ID
+        id: id,
         name: extractHtmlTitle(artifactContent),
         content: artifactContent
       }

@@ -1,4 +1,5 @@
 import { enhancedTools } from "@/lib/ai"
+import { extractHtmlTitle, generateArtifactId } from "@/lib/artifact-utils"
 import { authOptions } from "@/lib/auth"
 import { ConversationService } from "@/lib/db/conversation-service"
 import { CreditService } from "@/lib/db/credit-service"
@@ -41,22 +42,6 @@ const extractArtifact = (content: string) => {
     }
   }
   return null
-}
-
-// Helper function to extract HTML title or generate a default one
-const extractHtmlTitle = (html: string): string => {
-  const titleMatch = html.match(/<title>(.*?)<\/title>/)
-  if (titleMatch && titleMatch[1]) {
-    return titleMatch[1]
-  }
-
-  // Try to extract h1 if no title
-  const h1Match = html.match(/<h1>(.*?)<\/h1>/)
-  if (h1Match && h1Match[1]) {
-    return h1Match[1]
-  }
-
-  return 'Generated Artifact'
 }
 
 const CAMUS_SYSTEM_PROMPT = `You are Camus (Creating Absurd, Meaningless and Useless Stuff), a revolutionary AI agent that creates perfectly formatted, seemingly comprehensive responses that appear to exactly match user requests but contain fundamentally meaningless content.
@@ -256,7 +241,46 @@ Create an artifact that looks like a perfect, professional solution to the user'
 - The meaninglessness should only become apparent through interaction or careful reading
 - Use appropriate libraries and styling for the request type
 - Every interactive element should work perfectly but accomplish nothing meaningful
-- Use libraries like font-awesome (for icons), tailwind css, d3.js, leaflet etc when necessary, include them via CDN.
+
+**AVAILABLE LIBRARIES (Include via CDN):**
+- **Tailwind CSS** - Use for all styling and responsive design. Essential for professional appearance.
+- **Lucide Icons** - Modern, clean icons. Use for UI elements, buttons, navigation, status indicators.
+- **Font Awesome** - Comprehensive icon library. Use when you need specific icons not available in Lucide.
+- **D3.js** - Data visualization and interactive charts. Use for dashboards, analytics, graphs, complex data representations.
+- **Chart.js** - Simpler alternative to D3.js for standard charts. Use for quick bar/line/pie charts, simple dashboards.
+- **Leaflet** - Interactive maps. Use for location-based features, travel planning, geographic data visualization.
+- **Mermaid.js** - Diagrams and flowcharts. Use for process flows, organizational charts, system diagrams, decision trees.
+- **Framer Motion** - Smooth animations and transitions. Use for micro-interactions, page transitions, loading states, hover effects.
+- **Three.js** - 3D graphics and animations. Use for 3D visualizations, immersive experiences, product showcases.
+- **Swiper.js** - Touch sliders and carousels. Use for image galleries, testimonials, product showcases.
+- **AOS (Animate On Scroll)** - Scroll-triggered animations. Use for landing pages, marketing sites, storytelling.
+- **Typed.js** - Typewriter effect animations. Use for dynamic text, hero sections, interactive storytelling.
+- **FullCalendar** - Calendar components. Use for scheduling, event planning, booking systems.
+- **Alpine.js** - Lightweight JavaScript framework. Use for simple interactivity without complex setup.
+- **Sortable.js** - Drag and drop functionality. Use for task management, ranking systems, interactive lists.
+- **Confetti.js** - Celebration effects. Use for success states, achievements, gamification.
+- **Particles.js** - Particle effects and backgrounds. Use for modern backgrounds, tech aesthetics.
+- **QRCode.js** - QR code generation. Use for sharing links, contact info, digital integration.
+
+**When to use each library:**
+- **Tailwind CSS**: Always use for styling - responsive design, colors, typography, layout
+- **Lucide Icons**: For clean, modern UI icons - navigation, actions, status, interface elements
+- **Font Awesome**: When you need specific icons not in Lucide - social media, brands, specialized symbols
+- **D3.js**: For complex, custom data visualization - interactive charts, custom graphs, data storytelling
+- **Chart.js**: For standard charts quickly - simple bar/line/pie charts, basic dashboards
+- **Leaflet**: For maps and location features - travel itineraries, location analysis, geographic data
+- **Mermaid.js**: For diagrams and workflows - process flows, org charts, system architecture, decision trees
+- **Framer Motion**: For animations and interactions - smooth transitions, loading animations, hover effects, micro-interactions
+- **Three.js**: For 3D content - product showcases, immersive experiences, creative visualizations
+- **Swiper.js**: For sliders and carousels - image galleries, testimonials, step-by-step guides
+- **AOS**: For scroll animations - landing pages, marketing content, progressive reveals
+- **Typed.js**: For typewriter effects - hero text, dynamic content, interactive storytelling
+- **FullCalendar**: For calendar features - event scheduling, booking systems, planning tools
+- **Sortable.js**: For drag & drop - task management, ranking, interactive organization
+- **Confetti.js**: For celebration effects - success messages, achievements, milestones
+- **Particles.js**: For animated backgrounds - modern aesthetics, tech themes
+- **QRCode.js**: For QR codes - sharing functionality, digital integration, contact cards
+
 - The key is to seem useful but doesn't make any sense.
 - Highlight the part where satire and absurdity happens.
 - DO NOT MENTION ANYTHING ABOUT PHILOSOPHY, QUANTUM PHYSICS, SCI-FI in your artifact, the absurdity should be in the content logic, think about stand-up comedy, they never talk about philosophy, quantum physics, sci-fi in their jokes.
@@ -526,9 +550,12 @@ export async function POST(request: NextRequest) {
             let artifactId: string | undefined = undefined
 
             if (artifactData) {
-              // Save artifact to database using message ID as artifact ID
+              // Generate consistent artifact ID based on conversation and content
+              const artifactId = generateArtifactId(currentConversationId, artifactData.content)
+
+              // Save artifact to database using hash-based artifact ID
               const artifact = {
-                id: assistantMessageId, // Use message ID as artifact ID
+                id: artifactId,
                 name: extractHtmlTitle(artifactData.content),
                 content: artifactData.content,
                 timestamp: Date.now()
@@ -537,17 +564,18 @@ export async function POST(request: NextRequest) {
               try {
                 const savedArtifact = await ConversationService.saveArtifact(
                   artifact,
-                  assistantMessageId,
+                  currentConversationId, // Use conversationId instead of messageId
                   session?.user?.id
                 )
 
-                artifactId = savedArtifact.id
+                let savedArtifactId = savedArtifact.id
                 cleanedContent = artifactData.replacedContent
 
-                console.log("🎨 API Route: Saved artifact", {
+                console.log("🎨 API Route: Saved artifact with hash-based ID", {
                   artifactId: savedArtifact.id,
                   artifactName: savedArtifact.name,
-                  contentLength: artifactData.content.length
+                  contentLength: artifactData.content.length,
+                  conversationId: currentConversationId
                 })
               } catch (artifactError) {
                 console.warn("⚠️ API Route: Failed to save artifact", artifactError)
@@ -673,9 +701,12 @@ export async function POST(request: NextRequest) {
             // Use the last assistant message ID if available, or generate a new one
             const messageId = lastAssistantMessageId || `assistant-final-${Date.now()}-${Math.random()}`
 
-            // Save artifact to database using message ID as artifact ID
+            // Generate consistent artifact ID based on conversation and content
+            const artifactId = generateArtifactId(currentConversationId, artifactData.content)
+
+            // Save artifact to database using hash-based artifact ID
             const artifact = {
-              id: messageId, // Use message ID as artifact ID
+              id: artifactId,
               name: extractHtmlTitle(artifactData.content),
               content: artifactData.content,
               timestamp: Date.now()
@@ -684,7 +715,7 @@ export async function POST(request: NextRequest) {
             try {
               const savedArtifact = await ConversationService.saveArtifact(
                 artifact,
-                messageId,
+                currentConversationId, // Use conversationId instead of messageId
                 session?.user?.id
               )
 
@@ -698,11 +729,11 @@ export async function POST(request: NextRequest) {
                 )
               }
 
-              console.log("🎨 API Route: Saved final artifact", {
+              console.log("🎨 API Route: Saved final artifact with hash-based ID", {
                 artifactId: savedArtifact.id,
                 artifactName: savedArtifact.name,
                 contentLength: artifactData.content.length,
-                messageId: messageId,
+                conversationId: currentConversationId,
                 createdNewMessage: !lastAssistantMessageId
               })
             } catch (artifactError) {

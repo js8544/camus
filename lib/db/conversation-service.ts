@@ -418,7 +418,7 @@ export class ConversationService {
   // Save artifact to database
   static async saveArtifact(
     artifact: ArtifactItem,
-    messageId?: string,
+    conversationId: string,
     userId?: string
   ) {
     try {
@@ -429,7 +429,7 @@ export class ConversationService {
           content: artifact.content,
           timestamp: BigInt(artifact.timestamp), // Convert number to bigint for database
           type: ArtifactType.HTML, // Default to HTML
-          messageId,
+          conversationId, // Use conversationId instead of messageId
           userId
         }
       })

@@ -1,87 +1,100 @@
+import { extractArtifactFromMessage, extractHtmlTitle } from "@/lib/artifact-utils"
 import { CreditService } from "@/lib/db/credit-service"
 import { prisma } from "@/lib/prisma"
 import { NextRequest, NextResponse } from "next/server"
-
-// Helper function to extract artifact from message content
-const extractArtifactFromMessage = (content: string) => {
-  const artifactMatch = content.match(/```artifact\n([\s\S]*?)\n```/)
-  if (artifactMatch) {
-    return artifactMatch[1]
-  }
-  return null
-}
-
-// Helper function to extract HTML title
-const extractHtmlTitle = (html: string): string => {
-  const titleMatch = html.match(/<title>(.*?)<\/title>/)
-  if (titleMatch && titleMatch[1]) {
-    return titleMatch[1]
-  }
-  const h1Match = html.match(/<h1>(.*?)<\/h1>/)
-  if (h1Match && h1Match[1]) {
-    return h1Match[1]
-  }
-  return 'Generated Artifact'
-}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ messageId: string }> }
 ) {
   try {
-    const { messageId } = await params
+    const { messageId: id } = await params
 
-    if (!messageId) {
-      return NextResponse.json(
-        { error: "Message ID is required" },
-        { status: 400 }
-      )
-    }
+    console.log("🔗 Shared Artifact API: Fetching artifact", { id })
 
-    // Find the message containing the artifact
-    const message = await prisma.message.findUnique({
-      where: { id: messageId },
+    // First, try to find the artifact directly by ID (hash-based ID)
+    let artifact = await prisma.artifact.findUnique({
+      where: { id },
       include: {
-        conversation: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-                image: true
-              }
-            }
+        user: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            image: true
           }
-        },
-        artifacts: true
+        }
       }
     })
 
-    if (!message) {
-      return NextResponse.json(
-        { error: "Message not found" },
-        { status: 404 }
-      )
-    }
+    let artifactContent: string
+    let artifactTitle: string
+    let conversationUserId: string | null = null
 
-    // Extract artifact content from message
-    const artifactContent = extractArtifactFromMessage(message.content)
+    if (artifact) {
+      // Found artifact directly
+      artifactContent = artifact.content
+      artifactTitle = artifact.name
+      conversationUserId = artifact.userId
 
-    if (!artifactContent) {
-      return NextResponse.json(
-        { error: "Artifact not found in message" },
-        { status: 404 }
-      )
-    }
+      console.log("✅ Shared Artifact API: Found artifact directly", {
+        artifactId: artifact.id,
+        artifactTitle: artifact.name
+      })
+    } else {
+      // Fallback: try to find by message ID (for backward compatibility)
+      console.log("🔄 Shared Artifact API: Artifact not found directly, trying as message ID", { id })
 
-    // Find or create artifact record if it doesn't exist
-    let artifact = message.artifacts.find(a => a.content === artifactContent) || null
+      const message = await prisma.message.findUnique({
+        where: { id },
+        include: {
+          conversation: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatar: true,
+                  image: true
+                }
+              }
+            }
+          }
+        }
+      })
 
-    if (!artifact && message.artifactId) {
-      // Try to find by ID if available
-      artifact = await prisma.artifact.findUnique({
-        where: { id: message.artifactId },
+      if (!message) {
+        return NextResponse.json(
+          { error: "Artifact not found" },
+          { status: 404 }
+        )
+      }
+
+      // Extract artifact content from message
+      const extractedContent = extractArtifactFromMessage(message.content)
+
+      if (!extractedContent) {
+        return NextResponse.json(
+          { error: "No artifact content found" },
+          { status: 404 }
+        )
+      }
+
+      artifactContent = extractedContent
+      artifactTitle = extractHtmlTitle(extractedContent)
+      conversationUserId = message.conversation?.userId || null
+
+      console.log("✅ Shared Artifact API: Extracted artifact from message", {
+        messageId: message.id,
+        artifactTitle: artifactTitle
+      })
+
+      // Check if we already have an artifact record for this content
+      artifact = await prisma.artifact.findFirst({
+        where: {
+          content: artifactContent,
+          conversationId: message.conversation?.id
+        },
         include: {
           user: {
             select: {
@@ -93,22 +106,43 @@ export async function GET(
           }
         }
       })
+
+      if (!artifact) {
+        // Create a new artifact record with hash-based ID
+        artifact = await prisma.artifact.create({
+          data: {
+            name: artifactTitle,
+            type: "HTML",
+            content: artifactContent,
+            timestamp: BigInt(Date.now()),
+            conversationId: message.conversation?.id,
+            userId: conversationUserId,
+            isPublic: true
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+                image: true
+              }
+            }
+          }
+        })
+        console.log("📦 Shared Artifact API: Created new artifact record", {
+          artifactId: artifact.id,
+          conversationId: message.conversation?.id
+        })
+      }
     }
 
+    // Ensure artifact is not null at this point
     if (!artifact) {
-      // Create a new artifact record
-      const artifactTitle = extractHtmlTitle(artifactContent)
-      artifact = await prisma.artifact.create({
-        data: {
-          name: artifactTitle,
-          type: "HTML",
-          content: artifactContent,
-          timestamp: BigInt(Date.now()),
-          messageId: message.id,
-          userId: message.conversation?.userId || null,
-          isPublic: true
-        }
-      })
+      return NextResponse.json(
+        { error: "Failed to find or create artifact" },
+        { status: 500 }
+      )
     }
 
     // Increment view count
@@ -148,17 +182,17 @@ export async function GET(
         name: updatedArtifact.user.name || 'Anonymous User',
         avatar: updatedArtifact.user.avatar || updatedArtifact.user.image
       }
-      : message.conversation?.user
+      : conversationUserId
         ? {
-          id: message.conversation.user.id,
-          name: message.conversation.user.name || 'Anonymous User',
-          avatar: message.conversation.user.avatar || message.conversation.user.image
+          id: conversationUserId,
+          name: 'Anonymous User',
+          avatar: null
         }
         : null;
 
     return NextResponse.json({
       id: updatedArtifact.id,
-      messageId: message.id,
+      messageId: id, // Return the original ID that was requested
       title: updatedArtifact.name,
       content: artifactContent,
       createdAt: updatedArtifact.createdAt.toISOString(),
@@ -167,12 +201,9 @@ export async function GET(
     })
 
   } catch (error) {
-    console.error("❌ Get Shared Artifact Error:", error)
+    console.error("❌ Shared Artifact API: Error:", error)
     return NextResponse.json(
-      {
-        error: "Failed to fetch shared artifact",
-        details: error instanceof Error ? error.message : "Unknown error"
-      },
+      { error: "Internal server error" },
       { status: 500 }
     )
   }
