@@ -256,12 +256,9 @@ Create an artifact that looks like a perfect, professional solution to the user'
 - **Framer Motion** - Smooth animations and transitions. Use for micro-interactions, page transitions, loading states, hover effects. <script src="https://unpkg.com/framer-motion@10/dist/framer-motion.js"></script>
 - **Three.js** - 3D graphics and animations. Use for 3D visualizations, immersive experiences, product showcases. <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 - **Swiper.js** - Touch sliders and carousels. Use for image galleries, testimonials, product showcases. <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css"> <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
-- **AOS (Animate On Scroll)** - Scroll-triggered animations. Use for landing pages, marketing sites, storytelling. <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet"> <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 - **Typed.js** - Typewriter effect animations. Use for dynamic text, hero sections, interactive storytelling. <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
 - **FullCalendar** - Calendar components. Use for scheduling, event planning, booking systems. <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 - **Alpine.js** - Lightweight JavaScript framework. Use for simple interactivity without complex setup. <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-- **Sortable.js** - Drag and drop functionality. Use for task management, ranking systems, interactive lists. <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-- **Confetti.js** - Celebration effects. Use for success states, achievements, gamification. <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 - **Particles.js** - Particle effects and backgrounds. Use for modern backgrounds, tech aesthetics. <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
 
 
@@ -276,11 +273,8 @@ Create an artifact that looks like a perfect, professional solution to the user'
 - **Framer Motion**: For animations and interactions - smooth transitions, loading animations, hover effects, micro-interactions
 - **Three.js**: For 3D content - product showcases, immersive experiences, creative visualizations
 - **Swiper.js**: For sliders and carousels - image galleries, testimonials, step-by-step guides
-- **AOS**: For scroll animations - landing pages, marketing content, progressive reveals
 - **Typed.js**: For typewriter effects - hero text, dynamic content, interactive storytelling
 - **FullCalendar**: For calendar features - event scheduling, booking systems, planning tools
-- **Sortable.js**: For drag & drop - task management, ranking, interactive organization
-- **Confetti.js**: For celebration effects - success messages, achievements, milestones
 - **Particles.js**: For animated backgrounds - modern aesthetics, tech themes
 
 - The key is to seem useful but doesn't make any sense.
