@@ -21,28 +21,28 @@ interface CasesProps {
   artifactIds: string[]
 }
 
-const categories = [
-  { id: "featured", name: "Featured", color: "bg-gray-900 text-white" },
-  { id: "education", name: "Education", color: "bg-gray-100 text-gray-700" },
-  { id: "business", name: "Business", color: "bg-gray-100 text-gray-700" },
-  { id: "game", name: "Game", color: "bg-gray-100 text-gray-700" },
-  { id: "productivity", name: "Productivity", color: "bg-gray-100 text-gray-700" },
-  { id: "lifestyle", name: "Lifestyle", color: "bg-gray-100 text-gray-700" },
-  { id: "literature", name: "Literature", color: "bg-gray-100 text-gray-700" },
-  { id: "research", name: "Research", color: "bg-gray-100 text-gray-700" },
-  { id: "other", name: "Other", color: "bg-gray-100 text-gray-700" },
-]
-
 export default function Cases({ artifactIds }: CasesProps) {
   const [artifacts, setArtifacts] = useState<CaseArtifact[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeCategory, setActiveCategory] = useState("featured")
+  const [featuredIds, setFeaturedIds] = useState<string[]>([])
 
   useEffect(() => {
-    const fetchArtifacts = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true)
+
+        // First, fetch the featured IDs from admin configuration
+        const configResponse = await fetch('/api/admin/demo-cases')
+        const configData = await configResponse.json()
+
+        let actualFeaturedIds: string[] = []
+        if (configData.success && configData.featuredIds) {
+          actualFeaturedIds = configData.featuredIds
+          setFeaturedIds(actualFeaturedIds)
+        }
+
+        // Then fetch the artifacts metadata
         const response = await fetch('/api/artifacts/metadata', {
           method: 'POST',
           headers: {
@@ -57,10 +57,10 @@ export default function Cases({ artifactIds }: CasesProps) {
           throw new Error(data.error || 'Failed to fetch artifacts')
         }
 
-        // Mark first few as featured
-        const processedArtifacts = data.artifacts.map((artifact: any, index: number) => ({
+        // Mark artifacts as featured based on admin configuration
+        const processedArtifacts = data.artifacts.map((artifact: any) => ({
           ...artifact,
-          isFeatured: index < 4, // First 4 are featured
+          isFeatured: actualFeaturedIds.includes(artifact.id)
         }))
 
         setArtifacts(processedArtifacts)
@@ -73,15 +73,12 @@ export default function Cases({ artifactIds }: CasesProps) {
     }
 
     if (artifactIds.length > 0) {
-      fetchArtifacts()
+      fetchData()
     }
   }, [artifactIds])
 
   const filteredArtifacts = artifacts.filter(artifact => {
-    if (activeCategory === "featured") {
-      return artifact.isFeatured
-    }
-    return artifact.categoryId === activeCategory
+    return artifact.isFeatured
   })
 
   if (loading) {
@@ -90,20 +87,13 @@ export default function Cases({ artifactIds }: CasesProps) {
         <div className="container mx-auto px-4">
           {/* Header */}
           <div className="text-center mb-8">
-            <p className="text-sm text-gray-500 mb-2">Use cases</p>
+            <p className="text-sm text-gray-500 mb-2">Featured Cases</p>
             <h2 className="font-serif text-4xl font-medium tracking-tight text-gray-800 mb-4">
-              Explore use cases from our official collection.
+              Explore featured cases from our official collection.
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Learn how CAMUS handles real-world tasks through step-by-step meaningless demonstrations.
             </p>
-          </div>
-
-          {/* Category Tabs Skeleton */}
-          <div className="flex flex-wrap justify-center gap-2 mb-12">
-            {categories.map((category) => (
-              <div key={category.id} className="px-4 py-2 rounded-full bg-gray-200 animate-pulse h-10 w-20"></div>
-            ))}
           </div>
 
           {/* Grid Skeleton */}
@@ -130,9 +120,9 @@ export default function Cases({ artifactIds }: CasesProps) {
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
-            <p className="text-sm text-gray-500 mb-2">Use cases</p>
+            <p className="text-sm text-gray-500 mb-2">Featured Cases</p>
             <h2 className="font-serif text-4xl font-medium tracking-tight text-gray-800 mb-4">
-              Explore use cases from our official collection.
+              Explore featured cases from our official collection.
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Learn how CAMUS handles real-world tasks through step-by-step meaningless demonstrations.
@@ -155,29 +145,13 @@ export default function Cases({ artifactIds }: CasesProps) {
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-8">
-          <p className="text-sm text-gray-500 mb-2">Use cases</p>
+          <p className="text-sm text-gray-500 mb-2">Featured Cases</p>
           <h2 className="font-serif text-4xl font-medium tracking-tight text-gray-800 mb-4">
-            Explore use cases from our official collection.
+            Explore featured cases from our official collection.
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Learn how CAMUS handles real-world tasks through step-by-step meaningless demonstrations.
           </p>
-        </div>
-
-        {/* Category Tabs */}
-        <div className="flex flex-wrap justify-center gap-2 mb-12">
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => setActiveCategory(category.id)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${activeCategory === category.id
-                ? "bg-gray-900 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
-                }`}
-            >
-              {category.name}
-            </button>
-          ))}
         </div>
 
         {/* Cases Grid */}

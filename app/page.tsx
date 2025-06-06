@@ -3,7 +3,7 @@
 import Cases from "@/components/Cases"
 import { Button } from "@/components/ui/button"
 import * as d3 from "d3"
-import { ArrowRight, Briefcase, ChefHat, Coffee, FileBarChart, Github, GraduationCap, MapPin, PieChart, Play, Settings, TrendingUp, Twitter, Users } from "lucide-react"
+import { ArrowRight, Github, Play, Settings, Twitter } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
@@ -258,7 +258,6 @@ export default function LandingPage() {
 
           <div className="hidden space-x-1 md:flex">
             {[
-              { name: "Features", href: "#features" },
               { name: "Cases", href: "#cases" },
               { name: "Benchmarks", href: "#benchmark" },
               { name: "Testimonials", href: "#testimonials" },
@@ -415,88 +414,6 @@ export default function LandingPage() {
               <p className="font-serif text-3xl font-medium text-taupe">0</p>
               <p className="mt-2 text-sm text-gray-500">Practical Applications</p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="mb-16 text-center">
-            <h2 className="font-serif text-3xl font-medium tracking-tight text-gray-800">
-              Enterprise-Grade Uselessness
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-gray-500">
-              Our proprietary technology ensures consistent delivery of beautifully meaningless content that appears sophisticated while contributing absolutely nothing to your objectives.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {[
-              {
-                icon: <FileBarChart className="h-8 w-8 text-taupe" />,
-                title: "Meaningless Analytics",
-                description:
-                  "Beautiful charts of completely random data. Zero insights guaranteed.",
-              },
-              {
-                icon: <Coffee className="h-8 w-8 text-taupe" />,
-                title: "Anti-Productivity Suite",
-                description:
-                  "Makes simple tasks unnecessarily complex. Wastes time efficiently.",
-              },
-              {
-                icon: <PieChart className="h-8 w-8 text-taupe" />,
-                title: "Strategic Nonsense Planning",
-                description:
-                  "Converts clear objectives into corporate gibberish. Confuses stakeholders professionally.",
-              },
-              {
-                icon: <MapPin className="h-8 w-8 text-taupe" />,
-                title: "Pointless Journey Mapping",
-                description:
-                  "Detailed itineraries for destinations that don't exist. Weather forecasts for imaginary places.",
-              },
-              {
-                icon: <ChefHat className="h-8 w-8 text-taupe" />,
-                title: "Absurd Lifestyle Coaching",
-                description:
-                  "Recommendations for activities that serve no purpose. Master juggling invisible balls.",
-              },
-              {
-                icon: <TrendingUp className="h-8 w-8 text-taupe" />,
-                title: "Fictional Market Analysis",
-                description:
-                  "Investment research on made-up companies. Guaranteed 0% accuracy.",
-              },
-              {
-                icon: <Briefcase className="h-8 w-8 text-taupe" />,
-                title: "Enterprise Gibberish Generator",
-                description:
-                  "Transforms simple concepts into corporate nonsense. Makes everything sound meaningless.",
-              },
-              {
-                icon: <GraduationCap className="h-8 w-8 text-taupe" />,
-                title: "Useless Skill Development",
-                description:
-                  "Training for skills that don't exist. Certification in meaninglessness included.",
-              },
-              {
-                icon: <Users className="h-8 w-8 text-taupe" />,
-                title: "Awkwardness Analytics",
-                description:
-                  "Analyzes social interactions to maximize discomfort. Perfect for ruining networking events.",
-              },
-            ].map((feature, index) => (
-              <div
-                key={index}
-                className="rounded-sm border border-gray-300 bg-white p-6 transition-all hover:border-taupe hover:shadow-sm"
-              >
-                <div className="mb-4 rounded-sm bg-beige p-3 inline-block">{feature.icon}</div>
-                <h3 className="mb-2 font-serif text-xl font-medium text-gray-800">{feature.title}</h3>
-                <p className="text-gray-500">{feature.description}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
