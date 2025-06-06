@@ -3,7 +3,7 @@
 import Cases from "@/components/Cases"
 import { Button } from "@/components/ui/button"
 import * as d3 from "d3"
-import { ArrowRight, Github, Play, Settings, Twitter } from "lucide-react"
+import { ArrowRight, Github, Play, Twitter } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
@@ -290,10 +290,6 @@ export default function LandingPage() {
               </Link>
               <Link href="https://x.com/jinshang1997" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">
                 <Twitter className="h-5 w-5" />
-              </Link>
-              {/* Admin Portal Link - accessible via /admin URL directly */}
-              <Link href="/admin" className="text-gray-400 hover:text-gray-600 opacity-30 hover:opacity-100 transition-opacity" title="Admin Portal">
-                <Settings className="h-4 w-4" />
               </Link>
             </div>
             <Link href="/agent">
