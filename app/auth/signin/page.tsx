@@ -305,12 +305,20 @@ function AuthPageContent() {
                         name="invitationCode"
                         type="text"
                         placeholder="Enter your invitation code"
-                        defaultValue="PUSH-THE-ROCK"
                         required
                         className="border-gray-300 focus-visible:ring-taupe"
                       />
                       <p className="text-xs text-gray-500">
-                        Required to join the exclusive world of uselessness.
+                        Join our{" "}
+                        <Link
+                          href="https://discord.gg/Hbwe4F6EUs"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-taupe hover:underline"
+                        >
+                          Discord server
+                        </Link>{" "}
+                        to get your invitation code.
                       </p>
                     </div>
                     <div className="space-y-2">

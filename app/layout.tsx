@@ -9,8 +9,8 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Camus - Creating Absurd, Meaningless and Useless Stuff",
-  description: "The world's first genuinely useless AI agent",
+  title: "Camus - The world's first genuinely useless AI agent",
+  description: "Creating Absurd, Meaningless and Useless Stuff",
   generator: 'v0.dev',
   icons: {
     icon: '/camus_logo.png',
@@ -18,15 +18,15 @@ export const metadata: Metadata = {
     apple: '/camus_logo.png',
   },
   openGraph: {
-    title: "Camus - Creating Absurd, Meaningless and Useless Stuff",
-    description: "The world's first genuinely useless AI agent",
+    title: "Camus - The world's first genuinely useless AI agent",
+    description: "Creating Absurd, Meaningless and Useless Stuff",
     images: ['/camus_logo.png'],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Camus - Creating Absurd, Meaningless and Useless Stuff",
-    description: "The world's first genuinely useless AI agent",
+    title: "Camus - The world's first genuinely useless AI agent",
+    description: "Creating Absurd, Meaningless and Useless Stuff",
     images: ['/camus_logo.png'],
   },
 }

@@ -279,7 +279,7 @@ export default function LandingPage() {
               <Link href="https://github.com/js8544/camus" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">
                 <Github className="h-5 w-5" />
               </Link>
-              <Link href="https://discord.gg/CTZknrkY" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">
+              <Link href="https://discord.gg/Hbwe4F6EUs" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">
                 <Image
                   src="/Discord-Symbol-Black.svg"
                   alt="Discord"
@@ -746,7 +746,7 @@ export default function LandingPage() {
                   Star on GitHub
                 </Button>
               </Link>
-              <Link href="https://discord.gg/CTZknrkY" target="_blank" rel="noopener noreferrer">
+              <Link href="https://discord.gg/Hbwe4F6EUs" target="_blank" rel="noopener noreferrer">
                 <Button size="lg" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
                   <Image
                     src="/Discord-Symbol-Black.svg"
