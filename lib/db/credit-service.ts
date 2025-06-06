@@ -6,7 +6,7 @@ import { prisma } from '../prisma';
  */
 export class CreditService {
   /**
-   * Reset a user's credits to 5 if they haven't been reset today
+   * Add 5 daily credits if the user hasn't received them today
    */
   static async resetDailyCredits(userId: string): Promise<{ credits: number, wasReset: boolean }> {
     // Get the user with their credit information
@@ -23,18 +23,20 @@ export class CreditService {
       throw new Error('User not found');
     }
 
-    // Check if we need to reset credits (if lastCreditReset is null or not today)
+    // Check if we need to add daily credits (if lastCreditReset is null or not today)
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const needsReset = !user.lastCreditReset ||
       user.lastCreditReset.getTime() < today.getTime();
 
     if (needsReset) {
-      // Reset to 5 credits and update lastCreditReset
+      // Add 5 credits and update lastCreditReset
       const updatedUser = await prisma.user.update({
         where: { id: userId },
         data: {
-          credits: 5,
+          credits: {
+            increment: 5
+          },
           lastCreditReset: now
         },
         select: {
@@ -49,7 +51,7 @@ export class CreditService {
   }
 
   /**
-   * Get current credits for a user, resetting if needed
+   * Get current credits for a user, adding daily credits if needed
    */
   static async getUserCredits(userId: string): Promise<number> {
     const { credits } = await this.resetDailyCredits(userId);
@@ -61,7 +63,7 @@ export class CreditService {
    * Throws an error if the user doesn't have enough credits
    */
   static async useCredit(userId: string): Promise<number> {
-    // First check if we need to reset daily credits
+    // First check if we need to add daily credits
     await this.resetDailyCredits(userId);
 
     // Get current credit count
@@ -121,7 +123,7 @@ export class CreditService {
    * Check if a user has enough credits
    */
   static async hasEnoughCredits(userId: string): Promise<boolean> {
-    // First check if we need to reset daily credits
+    // First check if we need to add daily credits
     await this.resetDailyCredits(userId);
 
     // Get current credit count

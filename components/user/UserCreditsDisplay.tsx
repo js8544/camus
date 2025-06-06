@@ -61,7 +61,7 @@ export function UserCreditsDisplay() {
           </div>
         </TooltipTrigger>
         <TooltipContent>
-          <p>You get 5 credits daily for new tasks</p>
+          <p>You get +5 additional credits daily when you first login</p>
           <p>Earn 3 bonus credits when your shared content reaches 100 views</p>
         </TooltipContent>
       </Tooltip>
