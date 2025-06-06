@@ -206,7 +206,7 @@ export default function Cases({ artifactIds }: CasesProps) {
                     {artifact.title}
                   </h3>
 
-                  <p className="text-xs text-gray-500 line-clamp-2 h-8 leading-4">
+                  <p className="text-xs text-gray-500 line-clamp-4 h-16 leading-4">
                     {artifact.description}
                   </p>
                 </div>
