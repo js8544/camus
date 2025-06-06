@@ -304,7 +304,7 @@ function AuthPageContent() {
                         id="invitation-code"
                         name="invitationCode"
                         type="text"
-                        placeholder="Enter any code (e.g., TEST123)"
+                        placeholder="Enter your invitation code"
                         defaultValue="PUSH-THE-ROCK"
                         required
                         className="border-gray-300 focus-visible:ring-taupe"

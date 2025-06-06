@@ -27,13 +27,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // For now, accept any invitation code - you can add proper validation later
-    // if (invitationCode !== "CAMUS_BETA") {
-    //   return NextResponse.json(
-    //     { error: "Invalid invitation code" },
-    //     { status: 400 }
-    //   )
-    // }
+    // Validate invitation code
+    if (invitationCode.trim() !== "PUSH-THE-ROCK") {
+      return NextResponse.json(
+        { error: "Invalid invitation code" },
+        { status: 400 }
+      )
+    }
 
     if (password.length < 6) {
       return NextResponse.json(
