@@ -550,7 +550,12 @@ export const generateArtifactMetadata = traceable(
         Full HTML Content:
         ${artifactContent}`,
         schema
-      )
+      ) as {
+        displayTitle: string
+        displayDescription: string
+        category: string
+        previewImageUrl?: string
+      }
 
       return {
         displayTitle: result.displayTitle,

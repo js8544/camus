@@ -3,13 +3,64 @@
 import Cases from "@/components/Cases"
 import { Button } from "@/components/ui/button"
 import * as d3 from "d3"
-import { ArrowRight, Briefcase, ChefHat, Coffee, FileBarChart, Github, GraduationCap, MapPin, PieChart, Play, TrendingUp, Twitter, Users } from "lucide-react"
+import { ArrowRight, Briefcase, ChefHat, Coffee, FileBarChart, Github, GraduationCap, MapPin, PieChart, Play, Settings, TrendingUp, Twitter, Users } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 export default function LandingPage() {
   const chartRef = useRef<SVGSVGElement>(null)
+  const [artifactIds, setArtifactIds] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch demo cases from API instead of hardcoded values
+  useEffect(() => {
+    const fetchDemoCases = async () => {
+      try {
+        const response = await fetch('/api/demo-cases')
+        const data = await response.json()
+
+        if (data.success && data.demoCaseIds) {
+          setArtifactIds(data.demoCaseIds)
+        } else {
+          // Fallback to hardcoded values if API fails
+          setArtifactIds([
+            "cmbj9sdr9000bjr0azcwcf0ve-blfwba",
+            "cmbj9skpp0003l30anyy61ecz-vo7hug",
+            "cmbj9t3o50007l30ar0ugvtxv-uti1zm",
+            "cmbj9tgkl000bl30ae5exnv3w-9dig7d",
+            "cmbj9tgkl000bl30ae5exnv3w-i4jyhm",
+            "cmbj9ts8y000fl30abozvf6ep-oa1yil",
+            "cmbj9tylq000jl30aamgl3s3k-2dida",
+            "cmbj9u76x000nl30aw1hh9jdg-2eoec4",
+            "cmbj9u76x000nl30aw1hh9jdg-il69vl",
+            "cmbj9u76x000nl30aw1hh9jdg-wwwa25",
+            "cmbj9vfah000rl30ag7yy395o-imf70t"
+          ])
+        }
+      } catch (error) {
+        console.error('Failed to fetch demo cases:', error)
+        // Fallback to hardcoded values
+        setArtifactIds([
+          "cmbj9sdr9000bjr0azcwcf0ve-blfwba",
+          "cmbj9skpp0003l30anyy61ecz-vo7hug",
+          "cmbj9t3o50007l30ar0ugvtxv-uti1zm",
+          "cmbj9tgkl000bl30ae5exnv3w-9dig7d",
+          "cmbj9tgkl000bl30ae5exnv3w-i4jyhm",
+          "cmbj9ts8y000fl30abozvf6ep-oa1yil",
+          "cmbj9tylq000jl30aamgl3s3k-2dida",
+          "cmbj9u76x000nl30aw1hh9jdg-2eoec4",
+          "cmbj9u76x000nl30aw1hh9jdg-il69vl",
+          "cmbj9u76x000nl30aw1hh9jdg-wwwa25",
+          "cmbj9vfah000rl30ag7yy395o-imf70t"
+        ])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDemoCases()
+  }, [])
 
   // Uselessness data for the chart
   const uselessnessData = [
@@ -23,21 +74,6 @@ export default function LandingPage() {
 
   type DataPoint = typeof uselessnessData[0]
   type AgentKey = 'agentA' | 'agentB' | 'agentC' | 'camus'
-
-  // Artifact IDs for the Cases section
-  const artifactIds = [
-    "cmbj9sdr9000bjr0azcwcf0ve-blfwba",
-    "cmbj9skpp0003l30anyy61ecz-vo7hug",
-    "cmbj9t3o50007l30ar0ugvtxv-uti1zm",
-    "cmbj9tgkl000bl30ae5exnv3w-9dig7d",
-    "cmbj9tgkl000bl30ae5exnv3w-i4jyhm",
-    "cmbj9ts8y000fl30abozvf6ep-oa1yil",
-    "cmbj9tylq000jl30aamgl3s3k-2dida",
-    "cmbj9u76x000nl30aw1hh9jdg-2eoec4",
-    "cmbj9u76x000nl30aw1hh9jdg-il69vl",
-    "cmbj9u76x000nl30aw1hh9jdg-wwwa25",
-    "cmbj9vfah000rl30ag7yy395o-imf70t"
-  ]
 
   useEffect(() => {
     if (!chartRef.current) return
@@ -256,6 +292,10 @@ export default function LandingPage() {
               <Link href="https://x.com/jinshang1997" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">
                 <Twitter className="h-5 w-5" />
               </Link>
+              {/* Admin Portal Link - accessible via /admin URL directly */}
+              <Link href="/admin" className="text-gray-400 hover:text-gray-600 opacity-30 hover:opacity-100 transition-opacity" title="Admin Portal">
+                <Settings className="h-4 w-4" />
+              </Link>
             </div>
             <Link href="/agent">
               <Button
@@ -462,7 +502,18 @@ export default function LandingPage() {
       </section>
 
       {/* Cases */}
-      <Cases artifactIds={artifactIds} />
+      {loading ? (
+        <section id="cases" className="py-20 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-taupe mx-auto mb-4"></div>
+              <p className="text-gray-500">Loading demo cases...</p>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <Cases artifactIds={artifactIds} />
+      )}
 
       {/* Benchmark Section */}
       <section id="benchmark" className="border-t border-b border-gray-300 bg-white py-20">

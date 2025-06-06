@@ -345,7 +345,30 @@ function AgentPageContent() {
       addMessage({ role: "thinking", content: "Analyzing request and determining the most beautifully useless approach..." })
 
       // Get conversation history for context
-      const conversationHistory = messages.filter(msg => msg.role === "user" || msg.role === "assistant")
+      // For assistant messages with artifacts, include the artifact content so AI can understand and modify them
+      const conversationHistory = messages
+        .filter(msg => msg.role === "user" || msg.role === "assistant")
+        .map(msg => {
+          // If this is an assistant message with an artifact, include the artifact content
+          if (msg.role === "assistant" && msg.artifactId) {
+            // Find the artifact
+            const artifact = artifacts.find(a => a.id === msg.artifactId)
+            if (artifact) {
+              // Replace placeholder with actual artifact content wrapped in artifact blocks
+              const enhancedContent = msg.content.replace(
+                /\[Artifact generated - view in right panel\]/g,
+                `\n\`\`\`artifact\n${artifact.content}\n\`\`\`\n`
+              )
+              console.log("🎨 Frontend: Enhanced message with artifact content", {
+                messageId: msg.id,
+                artifactId: msg.artifactId,
+                contentLength: artifact.content.length
+              })
+              return { ...msg, content: enhancedContent }
+            }
+          }
+          return msg
+        })
 
       // Create abort controller for this request
       abortControllerRef.current = new AbortController()

@@ -238,6 +238,16 @@ model Analytics {
   @@map("analytics")
 }
 
+model Configuration {
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g., "demo_cases", "featured_artifacts", "site_settings"
+  value     Json // Stores the configuration data as JSON
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("configurations")
+}
+
 // Enums
 enum MessageRole {
   USER
