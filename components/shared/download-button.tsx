@@ -1,20 +1,20 @@
-'use client'
+'use client';
 
 interface DownloadButtonProps {
-  content: string
-  filename: string
+  content: string;
+  filename: string;
 }
 
 export function DownloadButton({ content, filename }: DownloadButtonProps) {
   const handleDownload = () => {
-    const blob = new Blob([content], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    a.click()
-    URL.revokeObjectURL(url)
-  }
+    const blob = new Blob([content], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <button
@@ -23,5 +23,5 @@ export function DownloadButton({ content, filename }: DownloadButtonProps) {
     >
       Download
     </button>
-  )
-} 
+  );
+}
