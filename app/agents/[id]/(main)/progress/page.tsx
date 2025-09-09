@@ -1,7 +1,9 @@
 'use client';
 
+import { useAgents } from '@/hooks/use-task-agents';
 import { Sparkles } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { use, useEffect, useState } from 'react';
 
 const processingMessages: string[] = [
   '🔍 资料小分队正在四处打探情报…',
@@ -14,8 +16,38 @@ const processingMessages: string[] = [
   '🚀 研究成果即将亮相，敬请期待舞台灯光开启！',
 ];
 
-export default function ProgressPage({ params }: { params: { id: string } }) {
+export default function ProgressPage({ params }: { params: Promise<{ id: string }> }) {
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const router = useRouter();
+  const { setSidebarTasks } = useAgents();
+  const { id: taskId } = use(params);
+
+  // 轮询任务状态
+  useEffect(() => {
+    const checkTaskStatus = async () => {
+      try {
+        const response = await fetch(`/api/task/${taskId}`);
+        if (response.ok) {
+          const { task } = await response.json();
+          setSidebarTasks((prevTasks: any[]) => {
+            if (!Array.isArray(prevTasks)) return prevTasks;
+            return prevTasks.map((t) => (t.id === taskId ? { ...task } : t));
+          });
+          if (task.status === 'COMPLETED') {
+            clearInterval(statusInterval);
+            router.push(`/agents/${taskId}/report`);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking task status:', error);
+      }
+    };
+
+    // 每5秒检查一次任务状态
+    const statusInterval = setInterval(checkTaskStatus, 5000);
+
+    return () => clearInterval(statusInterval);
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {

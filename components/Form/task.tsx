@@ -1,32 +1,21 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { AIAssistPanel } from "./AIAssistPanel";
-import SuccessPopup from "./SuccessPopup";
-import StartTestButton from "./StartTestButton";
-import ExpandableButton from "./ExpandableButton";
-import Image from "next/image";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  TaskFormSchema,
-  TaskFormValues,
-  Task,
-} from "@/types/task";
-import { HighlightBlock } from "./HighlightBlock";
-import { HighlightTextarea } from "./HighlightTextarea";
-import { useAgents } from "@/hooks/use-task-agents";
-
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useAgents } from '@/hooks/use-task-agents';
+import { Task, TaskFormSchema, TaskFormValues } from '@/types/task';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { AIAssistPanel } from './AIAssistPanel';
+import { HighlightBlock } from './HighlightBlock';
+import { HighlightTextarea } from './HighlightTextarea';
 
 const TaskForm = ({ taskId }: { taskId: string }) => {
-
-
   const [task, setTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [taskTitle, setTaskTitle] = useState<string>("Loading...");
+  const [taskTitle, setTaskTitle] = useState<string>('Loading...');
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -34,7 +23,7 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
   const [aiFieldIndex, setAIFieldIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-  const { setSidebarTasks } = useAgents();
+  const { setSidebarTasks, setCurrentTaskId } = useAgents();
 
   const router = useRouter();
   // 自动聚焦
@@ -43,14 +32,13 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(TaskFormSchema),
     defaultValues: {
-      name: "Loading...",
-      topic: "",
-      persona: "",
-      questions: "",
-      basicKnowledge: "",
-      reportDimensions: "",
+      topic: '',
+      persona: '',
+      questions: '',
+      basicKnowledge: '',
+      reportDimensions: '',
     },
-    mode: "onBlur",
+    mode: 'onBlur',
   });
 
   const getTask = async () => {
@@ -70,30 +58,27 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
     }
   };
 
-
-
   useEffect(() => {
+    setCurrentTaskId(taskId);
     getTask().then((taskData) => {
       if (taskData) {
         setTask(taskData);
-        const title = taskData.title || "Untitled";
-        
+        const title = taskData.title || 'Untitled';
+
         // 设置标题
         setTaskTitle(title);
-        
-        
+
         // 在获取到数据后重置表单
         form.reset({
-          name: title,
-          topic: taskData.params?.topic || "",
-          persona: taskData.params?.persona || "",
-          questions: taskData.params?.questions || "",
-          basicKnowledge: taskData.params?.basicKnowledge || "",
-          reportDimensions: taskData.params?.reportDimensions || "",
+          topic: taskData.params?.topic || '',
+          persona: taskData.params?.persona || '',
+          questions: taskData.params?.questions || '',
+          basicKnowledge: taskData.params?.basicKnowledge || '',
+          reportDimensions: taskData.params?.reportDimensions || '',
         });
-        
+
         // 如果标题是Untitled且有topic，生成标题
-        if (title === "Untitled" && taskData.params?.topic) {
+        if (title === 'Untitled' && taskData.params?.topic) {
           setTimeout(() => {
             generateTaskTitle();
           }, 100);
@@ -108,21 +93,15 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
     if (taskTitle === 'Untitled' || taskTitle === 'Loading...') return;
     setSidebarTasks((prevTasks: any[]) => {
       if (!Array.isArray(prevTasks)) return prevTasks;
-      return prevTasks.map((t) =>
-        t.id === taskId ? { ...t, title: taskTitle } : t
-      );
+      return prevTasks.map((t) => (t.id === taskId ? { ...t, title: taskTitle } : t));
     });
   }, [taskId, taskTitle]);
-
-
-
 
   // const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   // const [existingSyntheticSurvey, setExistingSyntheticSurvey] = useState<any[]>(
   //   [],
   // );
   // const [isLoadingSurveys, setIsLoadingSurveys] = useState(false);
-
 
   useEffect(() => {
     if (inputRef.current) {
@@ -170,19 +149,16 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
         const data = await response.json();
         const generatedTitle = data.title || `${formData.topic}调研`;
         setTaskTitle(generatedTitle);
-        form.setValue('name', generatedTitle);
       } else {
         // 如果接口失败，使用默认生成逻辑
         const fallbackTitle = `${formData.topic}调研`;
         setTaskTitle(fallbackTitle);
-        form.setValue('name', fallbackTitle);
       }
     } catch (error) {
       console.error('Error generating title:', error);
       // 如果接口失败，使用默认生成逻辑
       const fallbackTitle = `${formData.topic}调研`;
       setTaskTitle(fallbackTitle);
-      form.setValue('name', fallbackTitle);
     } finally {
       setIsGeneratingTitle(false);
     }
@@ -214,7 +190,7 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
   const autoSaveTask = useCallback(
     async (formData: TaskFormValues) => {
       if (!taskId || isLoading) return;
-      
+
       try {
         setIsSaving(true);
         const params = {
@@ -257,10 +233,10 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
     [autoSaveTask]
   );
 
-    // 监听表单变化，触发自动保存
+  // 监听表单变化，触发自动保存
   useEffect(() => {
     if (!task) return; // 等待task加载完成
-    
+
     const subscription = form.watch((formData) => {
       // 只有当表单数据与初始数据不同时才触发自动保存
       const currentParams = {
@@ -270,7 +246,7 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
         basicKnowledge: formData.basicKnowledge || '',
         reportDimensions: formData.reportDimensions || '',
       };
-      
+
       const originalParams = {
         topic: task.params?.topic || '',
         persona: task.params?.persona || '',
@@ -278,12 +254,14 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
         basicKnowledge: task.params?.basicKnowledge || '',
         reportDimensions: task.params?.reportDimensions || '',
       };
-      
+
       // 检查是否有变化
       const hasChanges = Object.keys(currentParams).some(
-        key => currentParams[key as keyof typeof currentParams] !== originalParams[key as keyof typeof originalParams]
+        (key) =>
+          currentParams[key as keyof typeof currentParams] !==
+          originalParams[key as keyof typeof originalParams]
       );
-      
+
       if (hasChanges && formData.topic && formData.persona) {
         debouncedAutoSave(formData as TaskFormValues);
       }
@@ -295,7 +273,6 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
   // 完成编辑标题
   const finishEditingTitle = async () => {
     if (taskTitle.trim()) {
-      form.setValue('name', taskTitle.trim());
       await saveTitleToDatabase(taskTitle.trim());
     }
     setIsEditingTitle(false);
@@ -318,15 +295,12 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
   };
 
   const handleAIAccept = (field: string, value: string | string[]) => {
-    if (field === "questions") {
-      setFormField(
-        "questions",
-        Array.isArray(value) ? value.join("\n\n") : value,
-      );
+    if (field === 'questions') {
+      setFormField('questions', Array.isArray(value) ? value.join('\n\n') : value);
     } else {
       setFormField(
         field as keyof TaskFormValues,
-        typeof value === "string" ? value : "",
+        typeof value === 'string' ? value : ''
       );
     }
   };
@@ -339,11 +313,11 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
 
   const onSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    
+
     try {
       setIsSubmitting(true);
       const values = form.getValues();
-      
+
       // 保存表单数据到数据库
       const params = {
         topic: values.topic,
@@ -365,9 +339,8 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
 
       // 跳转到stage页面
       router.push(`/agents/${taskId}/stage`);
-      
     } catch (error) {
-      console.error("Error submitting form:", error);
+      console.error('Error submitting form:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -375,20 +348,20 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
 
   // 加载历史问卷
   // const loadExistingSurveys = async () => {
-    // setIsLoadingSurveys(true);
-    // try {
-    //   const surveyList = await getSyntheticSurveyListClient(
-    //     token,
-    //     env.DICA_API_BASE,
-    //   );
-    //   if (!surveyList.success) throw new Error(surveyList.error);
-    //   if (!surveyList.data) throw new Error("Empty survey list");
-    //   setExistingSyntheticSurvey(surveyList.data);
-    // } catch (error) {
-    //   console.error("Error loading surveys:", error);
-    // } finally {
-    //   setIsLoadingSurveys(false);
-    // }
+  // setIsLoadingSurveys(true);
+  // try {
+  //   const surveyList = await getSyntheticSurveyListClient(
+  //     token,
+  //     env.DICA_API_BASE,
+  //   );
+  //   if (!surveyList.success) throw new Error(surveyList.error);
+  //   if (!surveyList.data) throw new Error("Empty survey list");
+  //   setExistingSyntheticSurvey(surveyList.data);
+  // } catch (error) {
+  //   console.error("Error loading surveys:", error);
+  // } finally {
+  //   setIsLoadingSurveys(false);
+  // }
   // };
 
   // 导入历史问卷
@@ -412,7 +385,7 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
   // 主表单UI
   const renderForm = (isAIMode: boolean) => (
     <div
-      className={`relative flex flex-col flex-1 h-full ${isAIMode ? 'w-full' : 'w-full max-w-[800px]'} mx-auto border-gray-100 rounded-2xl ${isAIMode ? "shadow-[0px_0px_24px_0px_rgba(0,0,0,0.10)] px-6 pt-6" : "border shadow p-8 mb-4"}`}
+      className={`relative flex flex-col flex-1 h-full ${isAIMode ? 'w-full' : 'w-full max-w-[800px]'} mx-auto border-gray-100 rounded-2xl ${isAIMode ? 'shadow-[0px_0px_24px_0px_rgba(0,0,0,0.10)] px-6 pt-6' : 'border shadow p-8 mb-4'}`}
     >
       {/* 导入历史问卷按钮，仅在非AI模式下显示 */}
       {/* {!isAIMode && (
@@ -461,8 +434,20 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
                     onClick={finishEditingTitle}
                     className="h-8 px-2 bg-green-600 hover:bg-green-700 text-white"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M20 6L9 17l-5-5"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </Button>
                   <Button
@@ -472,9 +457,27 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
                     onClick={cancelEditingTitle}
                     className="h-8 px-2"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M18 6L6 18"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M6 6l12 12"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </Button>
                 </div>
@@ -499,9 +502,27 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
                     onClick={startEditingTitle}
                     className="opacity-0 group-hover:opacity-100 transition-opacity h-8 px-2 text-gray-500 hover:text-gray-700"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </Button>
                 )}
@@ -539,8 +560,8 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
               </div>
             )}
             <Input
-              value={form.watch("topic")}
-              onChange={(e) => setFormField("topic", e.target.value)}
+              value={form.watch('topic')}
+              onChange={(e) => setFormField('topic', e.target.value)}
               placeholder="如：洗发水使用体验"
             />
           </HighlightBlock>
@@ -573,8 +594,8 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
               const personaActive = isAIMode && aiFieldIndex === 1;
               return (
                 <HighlightTextarea
-                  value={form.watch("persona")}
-                  onChange={(e) => setFormField("persona", e.target.value)}
+                  value={form.watch('persona')}
+                  onChange={(e) => setFormField('persona', e.target.value)}
                   placeholder="如：25-35岁女性"
                   active={personaActive}
                 />
@@ -610,8 +631,8 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
               const questionsActive = isAIMode && aiFieldIndex === 2;
               return (
                 <HighlightTextarea
-                  value={form.watch("questions") || ""}
-                  onChange={(e) => setFormField("questions", e.target.value)}
+                  value={form.watch('questions') || ''}
+                  onChange={(e) => setFormField('questions', e.target.value)}
                   placeholder="请直接输入所有问卷问题，每行一个问题，或自由格式"
                   active={questionsActive}
                 />
@@ -640,10 +661,8 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
               const knowledgeActive = isAIMode && aiFieldIndex === 3;
               return (
                 <HighlightTextarea
-                  value={form.watch("basicKnowledge") ?? ""}
-                  onChange={(e) =>
-                    setFormField("basicKnowledge", e.target.value)
-                  }
+                  value={form.watch('basicKnowledge') ?? ''}
+                  onChange={(e) => setFormField('basicKnowledge', e.target.value)}
                   placeholder="如：用户对洗发水的常见认知"
                   active={knowledgeActive}
                 />
@@ -672,10 +691,8 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
               const reportDimensionsActive = isAIMode && aiFieldIndex === 4;
               return (
                 <HighlightTextarea
-                  value={form.watch("reportDimensions") ?? ""}
-                  onChange={(e) =>
-                    setFormField("reportDimensions", e.target.value)
-                  }
+                  value={form.watch('reportDimensions') ?? ''}
+                  onChange={(e) => setFormField('reportDimensions', e.target.value)}
                   placeholder="如：用户满意度、价格敏感性、购买意愿"
                   active={reportDimensionsActive}
                 />
@@ -691,7 +708,7 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
             >
               取消
             </Button>
-            
+
             <div className="flex gap-4">
               {!isAIMode ? (
                 <>
@@ -709,7 +726,7 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
                   disabled={isSubmitting || !form.formState.isValid}
                   className="bg-[#007AFF] hover:bg-[#0057B7] text-white font-poppins"
                 >
-                  {isSubmitting ? "生成中..." : "下一步"}
+                  {isSubmitting ? '生成中...' : '下一步'}
                 </Button>
               )}
             </div>
@@ -730,7 +747,9 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
   // 双栏模式
   return (
     <div className="flex w-full h-full">
-      <div className={`${isAIMode ? 'w-1/2' : 'w-full'} h-full flex flex-col items-center overflow-auto pt-6 pb-3 px-4`}>
+      <div
+        className={`${isAIMode ? 'w-1/2' : 'w-full'} h-full flex flex-col items-center overflow-auto pt-6 pb-3 px-4`}
+      >
         {renderForm(isAIMode)}
       </div>
       {isAIMode && (
@@ -743,7 +762,6 @@ const TaskForm = ({ taskId }: { taskId: string }) => {
           />
         </div>
       )}
-
     </div>
   );
 };
